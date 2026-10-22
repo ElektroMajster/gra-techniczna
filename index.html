@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rejestr – programuj maszynę</title>
+<style>
+:root{--bg:#e9f0fb;--pn:#f8fbff;--ln:#9db6e0;--tx:#11295f;--mu:#4d6597;--ac:#d9480f;--ok:#0b7a6b;--rd:#c92a2a;--gr:#d3e0f5;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f2250;--pn:#14306b;--ln:#4a6fb8;--tx:#e3edff;--mu:#a3bbe8;--ac:#ffd43b;--ok:#69e0c5;--rd:#ff8787;--gr:#183a7c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f2250;--pn:#14306b;--ln:#4a6fb8;--tx:#e3edff;--mu:#a3bbe8;--ac:#ffd43b;--ok:#69e0c5;--rd:#ff8787;--gr:#183a7c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background-color:var(--bg);color:var(--tx);font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background-image:linear-gradient(var(--gr) 1px,transparent 1px),linear-gradient(90deg,var(--gr) 1px,transparent 1px);background-size:24px 24px}
+main{max-width:960px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{margin:0;font:800 34px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.02em}
+h1::after{content:"_";color:var(--ac);animation:b 1.1s steps(1) infinite}
+@keyframes b{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){h1::after{animation:none}}
+h2{margin:0 0 8px;font:700 15px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif}
+p{margin:0 0 8px}
+.mu{color:var(--mu)}
+button,select{font:inherit;color:var(--tx);background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:6px 10px;cursor:pointer}
+button:hover:not(:disabled),select:hover{border-color:var(--tx)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:700}
+#lv{display:flex;gap:6px;flex-wrap:wrap}
+#lv button{width:46px;padding:3px 0;line-height:1.2}
+#lv small{color:var(--ac);font-size:11px}
+#lv .p small{color:var(--bg)}
+.pn{background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:14px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media(max-width:760px){.g{grid-template-columns:1fr}}
+#ops{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:12px;margin:8px 0}
+#ops b{color:var(--ac)}
+.r{display:flex;gap:6px;align-items:center;margin-bottom:5px;padding:3px;border-radius:4px;border:2px solid transparent}
+.r.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 16%,transparent)}
+.no{width:22px;text-align:right;color:var(--mu)}
+.r .o{flex:1;min-width:0}
+.r .a{flex:0 0 74px}
+#code.lock{pointer-events:none}
+.bx{display:inline-block;min-width:36px;padding:3px 8px;margin:0 5px 5px 0;text-align:center;border:1px solid var(--ln);border-radius:3px;background:var(--bg)}
+.bx.ok{border-color:var(--ok);color:var(--ok)}
+.bx.bad{border-color:var(--rd);color:var(--rd)}
+.bx.gh{opacity:.55;border-style:dashed}
+.bx.acc{font-size:26px;font-weight:700;color:var(--ac);min-width:84px;padding:4px 14px;border-width:2px}
+.lb{color:var(--mu);font-size:12px;margin:10px 0 4px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#msg{margin-top:14px;min-height:46px}
+#msg button{margin-left:8px}
+.mo{color:var(--ok);font-weight:700}.me{color:var(--rd);font-weight:700}
+</style></head><body>
+<main>
+<header><h1>Rejestr</h1><nav id="lv" aria-label="Poziomy"></nav></header>
+<section class="pn" id="brief"></section>
+<div class="g">
+<section class="pn" id="code"><h2>Program</h2><div id="rows"></div><button id="add">+ instrukcja</button></section>
+<section class="pn" id="mach"></section>
+</div>
+<div class="ctl"><button id="st">Krok</button><button id="go" class="p">▶ Start</button><button id="rs">Reset</button><label class="mu">szybkość <input type="range" id="sp" min="30" max="700" value="480"></label></div>
+<div id="msg" aria-live="polite"></div>
+</main>
+<script>
+const $=i=>document.getElementById(i);
+const D={WEJ:'bierze liczbę z wejścia do ACC (puste wejście kończy program)',WYJ:'wysyła ACC na wyjście',ZAP:'zapisuje ACC w komórce [n]',WCZ:'wczytuje komórkę [n] do ACC',DOD:'ACC = ACC + [n]',ODE:'ACC = ACC − [n]',SKOK:'skacze do linii n',SKZ:'skacze do linii n, gdy ACC = 0',SKU:'skacze do linii n, gdy ACC < 0'};
+const JP=['SKOK','SKZ','SKU'],MP=['ZAP','WCZ','DOD','ODE'];
+const kd=o=>JP.includes(o)?2:MP.includes(o)?1:0;
+const N=(a,b)=>a+(Math.random()*(b-a+1)|0);
+const R=(n,a,b)=>Array.from({length:n},()=>N(a,b));
+const pairs=(a,f)=>a.filter((_,k)=>k%2==0).map((x,k)=>f(x,a[2*k+1]));
+const M0=[0,0,0,0];
+const L=[
+{n:'Przelot',d:'Maszyna ma wejście, akumulator (ACC) i wyjście. WEJ pobiera liczbę do ACC, WYJ ją wysyła. Przepisz wszystkie liczby. SKOK na początek zapętla program, aż skończy się wejście.',o:'WEJ,WYJ,SKOK',m:M0,i:[3,7,1,9],g:()=>R(N(3,6),0,9),f:a=>a,s:'WEJ,WYJ,SKOK 1'},
+{n:'Podwajacz',d:'Wyślij każdą liczbę pomnożoną przez 2. Mnożenia nie ma, ale możesz zapisać liczbę w pamięci i dodać ją do samej siebie.',o:'WEJ,WYJ,ZAP,DOD,SKOK',m:M0,i:[2,5,8],g:()=>R(N(3,6),0,9),f:a=>a.map(x=>x*2),s:'WEJ,ZAP 0,DOD 0,WYJ,SKOK 1'},
+{n:'Różnica',d:'Wejście składa się z par (a, b). Dla każdej pary wyślij a − b. ACC pomieści tylko jedną liczbę naraz, więc jedną z nich trzeba schować w pamięci.',o:'WEJ,WYJ,ZAP,WCZ,ODE,SKOK',m:M0,i:[9,4,3,7,8,8],g:()=>R(2*N(2,4),0,9),f:a=>pairs(a,(x,y)=>x-y),s:'WEJ,ZAP 0,WEJ,ZAP 1,WCZ 0,ODE 1,WYJ,SKOK 1'},
+{n:'Filtr zer',d:'Wyślij tylko liczby różne od zera. Zera mają zniknąć, a program ma wrócić po następną liczbę.',o:'WEJ,WYJ,SKZ,SKOK',m:M0,i:[0,5,0,3,8,0],g:()=>R(N(5,8),0,3),f:a=>a.filter(x=>x!=0),s:'WEJ,SKZ 1,WYJ,SKOK 1'},
+{n:'Moduł',d:'Wyślij wartość bezwzględną każdej liczby. Negacji nie ma, więc wymyśl, jak odjąć liczbę od zera.',o:'WEJ,WYJ,ZAP,ODE,SKU,SKOK',m:M0,i:[3,-5,0,-2,7],g:()=>R(N(4,7),-9,9),f:a=>a.map(x=>Math.abs(x)),s:'WEJ,SKU 5,WYJ,SKOK 1,ZAP 0,ODE 0,ODE 0,WYJ,SKOK 1'},
+{n:'Odliczanie',d:'Dla każdej liczby n wyślij n, n−1, …, 1. W komórce [0] leży stała 1 i nie da się jej zmienić.',o:'WEJ,WYJ,ODE,SKZ,SKOK',m:[1,0,0,0],i:[3,1,4],g:()=>R(N(2,3),1,5),f:a=>a.flatMap(n=>Array.from({length:n},(_,k)=>n-k)),s:'WEJ,WYJ,ODE 0,SKZ 1,SKOK 2'},
+{n:'Maksimum',d:'Wejście składa się z par (a, b). Dla każdej pary wyślij większą liczbę. Porównasz je odejmowaniem i skokiem warunkowym.',o:'WEJ,WYJ,ZAP,WCZ,DOD,ODE,SKOK,SKZ,SKU',m:M0,i:[3,8,9,2,5,5],g:()=>R(2*N(2,4),0,9),f:a=>pairs(a,Math.max),s:'WEJ,ZAP 0,WEJ,ZAP 1,ODE 0,SKU 9,WCZ 1,SKOK 10,WCZ 0,WYJ,SKOK 1'}
+];
+const P=s=>s.split(',').map(t=>{const[o,a]=t.split(' ');return[o,JP.includes(o)?a-1:+a||0]});
+const mk=(l,inp)=>({pc:0,acc:0,mem:[...l.m],inp:[...inp],out:[],e:l.f(inp),n:0,s:'run',m:''});
+const H=s=>{if(s.s=='run'){s.s=s.out.length==s.e.length?'ok':'er';if(s.s=='er')s.m='Program się zakończył, ale wyjście jest za krótkie.'}};
+function step(s,p){
+ if(s.s!='run')return;
+ if(s.pc>=p.length)return H(s);
+ const[o,a]=p[s.pc];let j=0;s.n++;
+ if(o=='WEJ'){if(!s.inp.length)return H(s);s.acc=s.inp.shift()}
+ else if(o=='WYJ'){s.out.push(s.acc);const k=s.out.length-1;if(s.acc!==s.e[k]){s.s='er';s.m='Wyjście nr '+(k+1)+': jest '+s.acc+', a powinno być '+(s.e[k]===undefined?'nic':s.e[k])+'.';return}}
+ else if(o=='ZAP')s.mem[a]=s.acc;
+ else if(o=='WCZ')s.acc=s.mem[a];
+ else if(o=='DOD')s.acc+=s.mem[a];
+ else if(o=='ODE')s.acc-=s.mem[a];
+ else if(o=='SKOK')j=1;
+ else if(o=='SKZ')j=s.acc==0;
+ else if(o=='SKU')j=s.acc<0;
+ s.pc=j?a:s.pc+1;
+ if(s.n>999&&s.s=='run'){s.s='er';s.m='Przekroczony limit 1000 kroków. Czy to nie jest pętla nieskończona?'}
+}
+const run=(l,p,inp)=>{const s=mk(l,inp);while(s.s=='run')step(s,p);return s};
+L.forEach(l=>{l.ops=l.o.split(',');const p=P(l.s);l.pl=p.length;l.ps=run(l,p,l.i).n});
+
+let sv=[];try{sv=JSON.parse(localStorage.getItem('rejestr1'))||[]}catch(e){}
+const save=()=>{try{localStorage.setItem('rejestr1',JSON.stringify(sv))}catch(e){}};
+let li=0,st=null,tm=0,auto=0;const pr=L.map(()=>[]);
+
+function nav(){$('lv').innerHTML=L.map((l,i)=>`<button data-l="${i}" ${i>0&&!(sv[i-1]>0)?'disabled':''} class="${i==li?'p':''}" title="${l.n}">${i+1}<br><small>${'★'.repeat(sv[i]|0)||'–'}</small></button>`).join('')}
+function brief(){const l=L[li];$('brief').innerHTML=`<h2>Poziom ${li+1}: ${l.n}</h2><p>${l.d}</p><div id="ops">${l.ops.map(o=>`<b>${o}${kd(o)?' n':''}</b><span>${D[o]}</span>`).join('')}</div><p class="mu">Wzorzec: ${l.pl} linii i ${l.ps} kroków na tym przykładzie. Gwiazdka za rozwiązanie, za nie więcej niż ${l.pl} linii i za nie więcej niż ${l.ps} kroków.</p>`}
+function code(){const l=L[li],p=pr[li];
+ $('rows').innerHTML=p.length?p.map(([o,a],i)=>`<div class="r"><span class="no">${i+1}</span><select class="o" data-i="${i}" aria-label="Instrukcja ${i+1}">${l.ops.map(x=>`<option${x==o?' selected':''}>${x}</option>`).join('')}</select>${kd(o)==2?`<select class="a" data-i="${i}" aria-label="Linia docelowa">${p.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>→ ${k+1}</option>`).join('')}</select>`:kd(o)==1?`<select class="a" data-i="${i}" aria-label="Komórka pamięci">${[0,1,2,3].map(k=>`<option value="${k}"${k==a?' selected':''}>[${k}]</option>`).join('')}</select>`:'<span class="a"></span>'}<button data-x="${i}" title="Usuń linię ${i+1}">×</button></div>`).join(''):'<p class="mu">Program jest pusty. Dodaj pierwszą instrukcję.</p>';
+ $('add').disabled=p.length>=14}
+function paint(){const s=st||mk(L[li],L[li].i);
+ const bx=(v,c='')=>`<span class="bx ${c}">${v}</span>`;
+ $('mach').innerHTML=`<h2>Maszyna</h2><div class="lb">Wejście (pierwsza liczba po lewej)</div>${s.inp.map(v=>bx(v)).join('')||'<span class="mu">puste</span>'}<div class="lb">Akumulator ACC</div>${bx(s.acc,'acc')}<div class="lb">Pamięć</div>${s.mem.map((v,k)=>`<span class="bx"><small class="mu">[${k}]</small> ${v}</span>`).join('')}<div class="lb">Wyjście</div>${s.out.map((v,k)=>bx(v,v===s.e[k]?'ok':'bad')).join('')||'<span class="mu">puste</span>'}<div class="lb">Oczekiwane wyjście</div>${s.e.map(v=>bx(v,'gh')).join('')}`;
+ document.querySelectorAll('.r').forEach((r,i)=>r.classList.toggle('on',!!st&&s.s=='run'&&s.pc==i));
+ $('code').classList.toggle('lock',!!st);
+ const dn=!!st&&s.s!='run';
+ $('st').disabled=dn||!!auto;$('go').disabled=dn;$('go').textContent=auto?'⏸ Pauza':'▶ Start'}
+const hid=()=>{for(let t=0;t<5;t++){const g=L[li].g(),s=run(L[li],pr[li],g);if(s.s!='ok')return g}return 0};
+function fin(){const s=st;if(s.s=='run')return;auto=0;clearTimeout(tm);const m=$('msg');
+ if(s.s=='er'){m.innerHTML=`<span class="me">Błąd:</span> ${s.m} Popraw program i kliknij Reset.`;return}
+ const bad=hid();
+ if(bad){m.innerHTML=`<span class="me">Przykład przeszedł, ale program zawodzi na ukrytym wejściu: ${bad.join(', ')}.</span> Sprawdź przypadki brzegowe i kliknij Reset.`;return}
+ const l=L[li],r=1+(pr[li].length<=l.pl)+(s.n<=l.ps);
+ if(r>(sv[li]|0)){sv[li]=r;save()}
+ m.innerHTML=`<span class="mo">Rozwiązane! ${'★'.repeat(r)}${'☆'.repeat(3-r)}</span> Linie: ${pr[li].length} z ${l.pl}. Kroki: ${s.n} z ${l.ps}. ${li<L.length-1?'<button id="nx" class="p">Następny poziom</button>':'To był ostatni poziom. Gratulacje, inżynierze!'}`;nav()}
+function tick(){if(!auto)return;step(st,pr[li]);if(st.s!='run'){fin();paint();return}paint();tm=setTimeout(tick,730-$('sp').value)}
+function start(){if(!st){st=mk(L[li],L[li].i);$('msg').textContent=''}}
+function reset(){auto=0;clearTimeout(tm);st=null;$('msg').textContent='';paint()}
+function load(i){reset();li=i;nav();brief();code();paint()}
+const del=i=>{const p=pr[li];p.splice(i,1);p.forEach(x=>{if(kd(x[0])==2){if(x[1]>i)x[1]--;x[1]=Math.max(0,Math.min(x[1],p.length-1))}});code()};
+
+document.addEventListener('change',e=>{const t=e.target,i=+t.dataset.i;if(t.dataset.i===undefined)return;const p=pr[li];
+ if(t.classList.contains('o')){if(kd(t.value)!=kd(p[i][0]))p[i][1]=0;p[i][0]=t.value;code()}else p[i][1]=+t.value});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.l!==undefined)load(+d.l);
+ else if(d.x!==undefined)del(+d.x);
+ else if(b.id=='add'){pr[li].push([L[li].ops[0],0]);code()}
+ else if(b.id=='st'){start();step(st,pr[li]);if(st.s!='run')fin();paint()}
+ else if(b.id=='go'){if(auto){auto=0;clearTimeout(tm);paint()}else{start();auto=1;tick()}}
+ else if(b.id=='rs')reset();
+ else if(b.id=='nx')load(li+1)});
+
+const s0=L.findIndex((_,i)=>!(sv[i]>0));load(s0<0?0:s0);
+</script></body></html>
