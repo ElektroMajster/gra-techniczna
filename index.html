@@ -53,12 +53,25 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #how[open] summary{margin-bottom:10px}
 #how p{max-width:72ch}
 #how code{background:var(--bg);border:1px solid var(--ln);border-radius:3px;padding:0 5px}
+#mach svg{display:block;width:100%;height:auto;margin:4px 0 6px}
+.sb{fill:var(--bg);stroke:var(--ln);stroke-width:1.5}
+.sb.on{stroke:var(--ac);stroke-width:3}
+.sb.pt{stroke-dasharray:4 3}
+.ln{stroke:var(--ln);stroke-width:2;fill:none}
+.ln.on{stroke:var(--ac);stroke-width:3.5}
+.ln.dz{stroke-dasharray:4 4}
+.ah{fill:var(--ln)}.al,.pk{fill:var(--ac)}
+.t{fill:var(--tx);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.t.m{fill:var(--mu);font-size:11px}
+.t.hl{fill:var(--ac);font-weight:700}
+.t.big{font-size:22px;font-weight:700}
 </style></head><body>
 <main>
 <header><h1>Rejestr</h1><nav id="lv" aria-label="Poziomy"></nav></header>
 <details class="pn" id="how" open><summary>Jak grać</summary>
 <p><b>Cel.</b> W każdym poziomie piszesz program, który zamienia liczby z wejścia na dokładnie takie wyjście, jakie pokazuje wiersz „Oczekiwane wyjście”.</p>
 <p><b>Maszyna.</b> Liczby czekają na wejściu. Maszyna ma jedną „rękę”, czyli akumulator ACC, który mieści tylko jedną liczbę, oraz cztery komórki pamięci [0] do [3]. Cała gra polega na przenoszeniu liczb między tymi miejscami i na ich obliczaniu.</p>
+<p><b>Schemat.</b> Rysunek w ramce „Maszyna” pokazuje budowę: wejście, akumulator ACC, pamięć, wyjście i jednostkę sterującą. Po każdej instrukcji podświetla się strzałka, którędy popłynęły dane.</p>
 <p><b>Pisanie programu.</b> Kliknij „+ instrukcja” i wybierz instrukcję z listy. Jeśli potrzebuje argumentu, wybierz obok komórkę [n] albo numer linii, do której ma skoczyć. Przycisk × usuwa linię, a skoki same się dostosują. Program wykonuje się od linii 1 w dół, a skok zmienia kolejność. Instrukcje dostępne na danym poziomie opisano poniżej, w ramce poziomu.</p>
 <p><b>Skoki warunkowe.</b> SKOK zawsze przeskakuje do wskazanej linii. SKZ przeskakuje tylko wtedy, gdy ACC wynosi 0, a SKU tylko wtedy, gdy ACC jest ujemny. W przeciwnym razie maszyna idzie do następnej linii.</p>
 <p><b>Uruchamianie.</b> „Krok” wykonuje jedną instrukcję, „Start” puszcza program automatycznie (suwak zmienia szybkość), a „Reset” czyści maszynę i odblokowuje edycję. Podświetlona linia to ta, która wykona się jako następna. Patrz na ACC i pamięć po każdym kroku, tak jak w debuggerze.</p>
@@ -107,7 +120,7 @@ const H=s=>{if(s.s=='run'){s.s=s.out.length==s.e.length?'ok':'er';if(s.s=='er')s
 function step(s,p){
  if(s.s!='run')return;
  if(s.pc>=p.length)return H(s);
- const[o,a]=p[s.pc];let j=0;s.n++;
+ const[o,a]=p[s.pc];let j=0;s.n++;s.lo=o;s.la=a;
  if(o=='WEJ'){if(!s.inp.length)return H(s);s.acc=s.inp.shift()}
  else if(o=='WYJ'){s.out.push(s.acc);const k=s.out.length-1;if(s.acc!==s.e[k]){s.s='er';s.m='Wyjście nr '+(k+1)+': jest '+s.acc+', a powinno być '+(s.e[k]===undefined?'nic':s.e[k])+'.';return}}
  else if(o=='ZAP')s.mem[a]=s.acc;
@@ -135,9 +148,28 @@ function brief(){const l=L[li];$('brief').innerHTML=`<h2>Poziom ${li+1}: ${l.n}<
 function code(){const l=L[li],p=pr[li];
  $('rows').innerHTML=p.length?p.map(([o,a],i)=>`<div class="r"><span class="no">${i+1}</span><select class="o" data-i="${i}" aria-label="Instrukcja ${i+1}">${l.ops.map(x=>`<option${x==o?' selected':''}>${x}</option>`).join('')}</select>${kd(o)==2?`<select class="a" data-i="${i}" aria-label="Linia docelowa">${p.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>→ ${k+1}</option>`).join('')}</select>`:kd(o)==1?`<select class="a" data-i="${i}" aria-label="Komórka pamięci">${l.m.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>[${k}]</option>`).join('')}</select>`:'<span class="a"></span>'}<button data-x="${i}" title="Usuń linię ${i+1}">×</button></div>`).join(''):'<p class="mu">Program jest pusty. Dodaj pierwszą instrukcję.</p>';
  $('add').disabled=p.length>=(l.ml||14)}
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function schema(s){
+ const lo=s.lo,la=s.la,n=s.mem.length,cw=Math.min(44,340/n),x0=320-cw*n/2,p=pr[li],nx=p[s.pc];
+ const ptr=lo=='WCZP'||lo=='ZAPP',mo=['ZAP','WCZ','DOD','ODE','INK','DEK'].includes(lo),jp=kd(lo)==2;
+ const up=['WCZ','DOD','ODE','INK','DEK','WCZP'].includes(lo),dn=lo=='ZAP'||lo=='ZAPP';
+ const ar=(x1,y1,x2,y2,on)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="ln${on?' on':''}" marker-end="url(#${on?'al':'ah'})"/>`+(on&&!RM?`<circle cx="${x1}" cy="${y1}" r="6" class="pk"><animate attributeName="cx" from="${x1}" to="${x2}" dur=".4s" fill="freeze"/><animate attributeName="cy" from="${y1}" to="${y2}" dur=".4s" fill="freeze"/></circle>`:'');
+ const tx=(x,y,t,c='',a='start')=>`<text x="${x}" y="${y}" class="t ${c}" text-anchor="${a}">${t}</text>`;
+ let c='';
+ for(let k=0;k<n;k++){const tg=(mo&&la===k)||(ptr&&s.mem[la]===k),pt=ptr&&la===k,cx=x0+k*cw+(cw-2)/2;
+  c+=`<rect x="${x0+k*cw}" y="206" width="${cw-2}" height="34" class="sb${tg?' on':''}${pt?' pt':''}"/>`+tx(cx,228,s.mem[k],'','middle')+tx(cx,254,k,'m','middle')}
+ return `<svg viewBox="0 0 640 262" role="img" aria-label="Schemat maszyny: wejście, akumulator ACC, pamięć, wyjście i jednostka sterująca"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker><marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="al"/></marker></defs>`
+ +`<rect x="230" y="12" width="180" height="40" class="sb${jp?' on':''}"/>`+tx(320,29,'jednostka sterująca','m','middle')+tx(320,46,`linia ${s.pc+1}: ${nx?nx[0]:'koniec'}`,'','middle')+tx(416,33,'SKOK SKZ SKU',jp?'hl':'m')
+ +`<line x1="320" y1="52" x2="320" y2="92" class="ln dz"/>`
+ +`<rect x="10" y="92" width="110" height="58" class="sb${lo=='WEJ'?' on':''}"/>`+tx(65,108,'wejście','m','middle')+tx(18,136,s.inp.slice(0,4).join(' ')+(s.inp.length>4?' …':''))
+ +`<rect x="520" y="92" width="110" height="58" class="sb${lo=='WYJ'?' on':''}"/>`+tx(575,108,'wyjście','m','middle')+tx(528,136,(s.out.length>3?'… ':'')+s.out.slice(-3).join(' '))
+ +`<rect x="250" y="92" width="140" height="58" class="sb${up||lo=='WEJ'?' on':''}"/>`+tx(320,108,'akumulator ACC','m','middle')+tx(320,139,s.acc,'big','middle')
+ +ar(120,121,248,121,lo=='WEJ')+ar(392,121,518,121,lo=='WYJ')+ar(290,152,290,204,dn)+ar(350,204,350,152,up)
+ +tx(184,114,'WEJ',lo=='WEJ'?'hl':'m','middle')+tx(454,114,'WYJ',lo=='WYJ'?'hl':'m','middle')+tx(284,182,'ZAP ZAPP',dn?'hl':'m','end')+tx(356,182,'WCZ DOD ODE INK DEK WCZP',up?'hl':'m')
+ +tx(10,228,'pamięć','m')+c+`</svg><p class="mu" style="margin:0 0 6px;font-size:12px">${lo?`Ostatnia instrukcja: <b>${lo}${kd(lo)==2?' → '+(la+1):kd(lo)==1?' ['+la+']':''}</b>. Podświetlona strzałka pokazuje drogę danych.`:'Uruchom program, a strzałki pokażą, którędy płyną dane.'}</p>`}
 function paint(){const s=st||mk(L[li],L[li].i);
  const bx=(v,c='')=>`<span class="bx ${c}">${v}</span>`;
- $('mach').innerHTML=`<h2>Maszyna</h2><div class="lb">Wejście (pierwsza liczba po lewej)</div>${s.inp.map(v=>bx(v)).join('')||'<span class="mu">puste</span>'}<div class="lb">Akumulator ACC</div>${bx(s.acc,'acc')}<div class="lb">Pamięć</div>${s.mem.map((v,k)=>`<span class="bx"><small class="mu">[${k}]</small> ${v}</span>`).join('')}<div class="lb">Wyjście</div>${s.out.map((v,k)=>bx(v,v===s.e[k]?'ok':'bad')).join('')||'<span class="mu">puste</span>'}<div class="lb">Oczekiwane wyjście</div>${s.e.map(v=>bx(v,'gh')).join('')}`;
+ $('mach').innerHTML=`<h2>Maszyna</h2>${schema(s)}<div class="lb">Wejście (pierwsza liczba po lewej)</div>${s.inp.map(v=>bx(v)).join('')||'<span class="mu">puste</span>'}<div class="lb">Akumulator ACC</div>${bx(s.acc,'acc')}<div class="lb">Pamięć</div>${s.mem.map((v,k)=>`<span class="bx"><small class="mu">[${k}]</small> ${v}</span>`).join('')}<div class="lb">Wyjście</div>${s.out.map((v,k)=>bx(v,v===s.e[k]?'ok':'bad')).join('')||'<span class="mu">puste</span>'}<div class="lb">Oczekiwane wyjście</div>${s.e.map(v=>bx(v,'gh')).join('')}`;
  document.querySelectorAll('.r').forEach((r,i)=>r.classList.toggle('on',!!st&&s.s=='run'&&s.pc==i));
  $('code').classList.toggle('lock',!!st);
  const dn=!!st&&s.s!='run';
