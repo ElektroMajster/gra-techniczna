@@ -45,7 +45,10 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .bx.acc{font-size:26px;font-weight:700;color:var(--ac);min-width:84px;padding:4px 14px;border-width:2px}
 .lb{color:var(--mu);font-size:12px;margin:10px 0 4px}
 .ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-#msg{margin-top:14px;min-height:46px}
+#bar{position:sticky;bottom:0;z-index:5;margin:12px -16px 0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--pn);border-top:2px solid var(--ln)}
+#bar .ctl button{padding:8px 14px}
+#msg{margin:0 0 8px;max-height:30vh;overflow:auto}
+#msg:empty{display:none}
 #msg button{margin-left:8px}
 .mo{color:var(--ok);font-weight:700}.me{color:var(--rd);font-weight:700}
 #how{margin-bottom:12px}
@@ -53,7 +56,8 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #how[open] summary{margin-bottom:10px}
 #how p{max-width:72ch}
 #how code{background:var(--bg);border:1px solid var(--ln);border-radius:3px;padding:0 5px}
-#mach svg{display:block;width:100%;height:auto;margin:4px 0 6px}
+#sch{margin-bottom:12px;overflow-x:auto}
+#sch svg{display:block;width:100%;min-width:560px;max-width:780px;height:auto;margin:0 auto}
 .sb{fill:var(--bg);stroke:var(--ln);stroke-width:1.5}
 .sb.on{stroke:var(--ac);stroke-width:3}
 .sb.pt{stroke-dasharray:4 3}
@@ -61,10 +65,10 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .ln.on{stroke:var(--ac);stroke-width:3.5}
 .ln.dz{stroke-dasharray:4 4}
 .ah{fill:var(--ln)}.al,.pk{fill:var(--ac)}
-.t{fill:var(--tx);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.t.m{fill:var(--mu);font-size:11px}
+.t{fill:var(--tx);font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.t.m{fill:var(--mu);font-size:13px}
 .t.hl{fill:var(--ac);font-weight:700}
-.t.big{font-size:22px;font-weight:700}
+.t.big{font-size:28px;font-weight:700}
 </style></head><body>
 <main>
 <header><h1>Rejestr</h1><nav id="lv" aria-label="Poziomy"></nav></header>
@@ -81,12 +85,13 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 <p class="mu">Wskazówka: gdy coś nie działa, przejdź program krokami i sprawdź, w którym momencie ACC lub pamięć przestają zawierać to, czego się spodziewasz.</p>
 </details>
 <section class="pn" id="brief"></section>
+<section class="pn" id="sch"></section>
 <div class="g">
 <section class="pn" id="code"><h2>Program</h2><div id="rows"></div><button id="add">+ instrukcja</button></section>
 <section class="pn" id="mach"></section>
 </div>
-<div class="ctl"><button id="st">Krok</button><button id="go" class="p">▶ Start</button><button id="rs">Reset</button><label class="mu">szybkość <input type="range" id="sp" min="30" max="700" value="480"></label></div>
-<div id="msg" aria-live="polite"></div>
+<div id="bar"><div id="msg" aria-live="polite"></div>
+<div class="ctl"><button id="st">Krok</button><button id="go" class="p">▶ Start</button><button id="rs">Reset</button><label class="mu">szybkość <input type="range" id="sp" min="30" max="700" value="480"></label></div></div>
 </main>
 <script>
 const $=i=>document.getElementById(i);
@@ -158,10 +163,10 @@ function schema(s){
  let c='';
  for(let k=0;k<n;k++){const tg=(mo&&la===k)||(ptr&&s.mem[la]===k),pt=ptr&&la===k,cx=x0+k*cw+(cw-2)/2;
   c+=`<rect x="${x0+k*cw}" y="206" width="${cw-2}" height="34" class="sb${tg?' on':''}${pt?' pt':''}"/>`+tx(cx,228,s.mem[k],'','middle')+tx(cx,254,k,'m','middle')}
- return `<svg viewBox="0 0 640 262" role="img" aria-label="Schemat maszyny: wejście, akumulator ACC, pamięć, wyjście i jednostka sterująca"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker><marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="al"/></marker></defs>`
+ return `<h2>Schemat maszyny</h2><svg viewBox="0 0 640 262" role="img" aria-label="Schemat maszyny: wejście, akumulator ACC, pamięć, wyjście i jednostka sterująca"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="ah"/></marker><marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="al"/></marker></defs>`
  +`<rect x="230" y="12" width="180" height="40" class="sb${jp?' on':''}"/>`+tx(320,29,'jednostka sterująca','m','middle')+tx(320,46,`linia ${s.pc+1}: ${nx?nx[0]:'koniec'}`,'','middle')+tx(416,33,'SKOK SKZ SKU',jp?'hl':'m')
  +`<line x1="320" y1="52" x2="320" y2="92" class="ln dz"/>`
- +`<rect x="10" y="92" width="110" height="58" class="sb${lo=='WEJ'?' on':''}"/>`+tx(65,108,'wejście','m','middle')+tx(18,136,s.inp.slice(0,4).join(' ')+(s.inp.length>4?' …':''))
+ +`<rect x="10" y="92" width="110" height="58" class="sb${lo=='WEJ'?' on':''}"/>`+tx(65,108,'wejście','m','middle')+tx(18,136,s.inp.slice(0,3).join(' ')+(s.inp.length>3?' …':''))
  +`<rect x="520" y="92" width="110" height="58" class="sb${lo=='WYJ'?' on':''}"/>`+tx(575,108,'wyjście','m','middle')+tx(528,136,(s.out.length>3?'… ':'')+s.out.slice(-3).join(' '))
  +`<rect x="250" y="92" width="140" height="58" class="sb${up||lo=='WEJ'?' on':''}"/>`+tx(320,108,'akumulator ACC','m','middle')+tx(320,139,s.acc,'big','middle')
  +ar(120,121,248,121,lo=='WEJ')+ar(392,121,518,121,lo=='WYJ')+ar(290,152,290,204,dn)+ar(350,204,350,152,up)
@@ -169,7 +174,8 @@ function schema(s){
  +tx(10,228,'pamięć','m')+c+`</svg><p class="mu" style="margin:0 0 6px;font-size:12px">${lo?`Ostatnia instrukcja: <b>${lo}${kd(lo)==2?' → '+(la+1):kd(lo)==1?' ['+la+']':''}</b>. Podświetlona strzałka pokazuje drogę danych.`:'Uruchom program, a strzałki pokażą, którędy płyną dane.'}</p>`}
 function paint(){const s=st||mk(L[li],L[li].i);
  const bx=(v,c='')=>`<span class="bx ${c}">${v}</span>`;
- $('mach').innerHTML=`<h2>Maszyna</h2>${schema(s)}<div class="lb">Wejście (pierwsza liczba po lewej)</div>${s.inp.map(v=>bx(v)).join('')||'<span class="mu">puste</span>'}<div class="lb">Akumulator ACC</div>${bx(s.acc,'acc')}<div class="lb">Pamięć</div>${s.mem.map((v,k)=>`<span class="bx"><small class="mu">[${k}]</small> ${v}</span>`).join('')}<div class="lb">Wyjście</div>${s.out.map((v,k)=>bx(v,v===s.e[k]?'ok':'bad')).join('')||'<span class="mu">puste</span>'}<div class="lb">Oczekiwane wyjście</div>${s.e.map(v=>bx(v,'gh')).join('')}`;
+ $('sch').innerHTML=schema(s);
+ $('mach').innerHTML=`<h2>Maszyna</h2><div class="lb">Wejście (pierwsza liczba po lewej)</div>${s.inp.map(v=>bx(v)).join('')||'<span class="mu">puste</span>'}<div class="lb">Akumulator ACC</div>${bx(s.acc,'acc')}<div class="lb">Pamięć</div>${s.mem.map((v,k)=>`<span class="bx"><small class="mu">[${k}]</small> ${v}</span>`).join('')}<div class="lb">Wyjście</div>${s.out.map((v,k)=>bx(v,v===s.e[k]?'ok':'bad')).join('')||'<span class="mu">puste</span>'}<div class="lb">Oczekiwane wyjście</div>${s.e.map(v=>bx(v,'gh')).join('')}`;
  document.querySelectorAll('.r').forEach((r,i)=>r.classList.toggle('on',!!st&&s.s=='run'&&s.pc==i));
  $('code').classList.toggle('lock',!!st);
  const dn=!!st&&s.s!='run';
