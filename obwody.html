@@ -98,6 +98,17 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .circuit .cm{fill:var(--mu);font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .circuit #cmsg{min-height:24px;margin:8px 0}
 .circuit .success{color:var(--ok);font-weight:700}
+.circuit .wire.live{stroke-dasharray:12 8;animation:fl .7s linear infinite}
+@keyframes fl{to{stroke-dashoffset:-20}}
+.circuit .spin{animation:sp linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.circuit .pulse{animation:pu .5s ease-in-out infinite alternate}
+@keyframes pu{to{opacity:.25}}
+.circuit .wt{fill:var(--rd);font:700 14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.circuit .warn{color:var(--rd);font-weight:700}
+.circuit .term.hint{fill:var(--ac);animation:pu .5s ease-in-out infinite alternate}
+#cread{min-height:24px;margin-bottom:8px}
+@media(prefers-reduced-motion:reduce){.circuit .wire.live,.circuit .spin,.circuit .pulse,.circuit .term.hint{animation:none}}
 </style></head><body>
 <main>
 <header><h1>Obwody</h1><nav id="mode" aria-label="Tryb gry"><a class="navlink" href="index.html">Rejestr</a><a class="navlink p" href="obwody.html">Obwody</a></nav></header>
@@ -107,9 +118,10 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 <nav id="clv" aria-label="Układy elektryczne"></nav>
 <div class="ctl"><label>Losuj poziom <select id="cdiff" aria-label="Trudność losowanego poziomu"><option value="any">dowolny</option><option value="easy">łatwy</option><option value="hard">trudny</option></select></label><button id="crandom">Losuj zadanie</button></div>
 <div id="cboard"></div>
-<div id="cmsg" aria-live="polite"></div>
-<div class="ctl"><label>Napięcie baterii <select id="cvolt" aria-label="Napięcie baterii"><option value="1.5">1,5 V</option><option value="2">2 V</option><option value="2.2">2,2 V</option><option value="3">3 V</option><option value="3.3">3,3 V</option><option value="4">4 V</option><option value="4.2">4,2 V</option><option value="5">5 V</option><option value="9">9 V</option><option value="12">12 V</option></select></label><button id="ccheck" class="p">Sprawdź obwód</button><button id="ccancel">Anuluj przewód</button><button id="cclear">Usuń przewody</button><button id="cnext">Następny układ</button></div>
+<div id="cmsg" aria-live="polite"></div><div id="cread" class="mu"></div>
+<div class="ctl"><label>Napięcie baterii <select id="cvolt" aria-label="Napięcie baterii"><option value="1.5">1,5 V</option><option value="2">2 V</option><option value="2.2">2,2 V</option><option value="3">3 V</option><option value="3.3">3,3 V</option><option value="4">4 V</option><option value="4.2">4,2 V</option><option value="5">5 V</option><option value="6">6 V</option><option value="9">9 V</option><option value="12">12 V</option></select></label><button id="ccheck" class="p">Sprawdź obwód</button><button id="chint">Podpowiedź</button><label class="mu"><input type="checkbox" id="csnd"> dźwięk</label><button id="ccancel">Anuluj przewód</button><button id="cclear">Usuń przewody</button><button id="cnext">Następny układ</button></div>
 <p class="mu" style="margin-top:10px">Przeciągnij element, aby go przesunąć. Obróć go, klikając ↻ przy symbolu. Kliknij zacisk początkowy, potem drugi zacisk, aby utworzyć przewód z automatycznymi zakrętami; klikaj wolne punkty, aby poprowadzić własną trasę. Kolorowe LED-y mają różne napięcia przewodzenia. Model napięć jest uproszczony; rzeczywiste LED-y wymagają ograniczenia prądu rezystorem.</p>
+<p class="mu">Symulacja działa na żywo: żarówki i LED-y świecą zależnie od prądu, silnik się kręci, brzęczyk gra (włącz „dźwięk”), a przewody pokazują przepływ prądu. Kliknij opornik z kilkoma wartościami, aby go zmienić. Przytrzymaj przycisk, aby zewrzeć jego styki. Przepalony bezpiecznik wymienisz kliknięciem. Przeciążone elementy dostają ostrzeżenie i blokują zaliczenie układu.</p>
 </section>
 </main>
 <script>const $=id=>document.getElementById(id);
@@ -128,11 +140,22 @@ const C=[
  {name:'Bezpiecznik',difficulty:'easy',task:'Włącz bezpiecznik oraz żarówkę szeregowo. Bezpiecznik ma być częścią jedynej drogi prądu.',components:[{id:'f1',type:'fuse',x:350,y:185},{id:'l1',type:'lamp',x:510,y:185}],topology:'series'},
  {name:'Sygnał dźwiękowy',difficulty:'easy',task:'Połącz brzęczyk i wyłącznik szeregowo z baterią. Zamknij wyłącznik, aby uruchomić sygnał.',components:[{id:'sw',type:'switch',x:280,y:185},{id:'bz',type:'buzzer',x:470,y:185}],topology:'series'},
  {name:'Dioda jednokierunkowa',difficulty:'hard',task:'Połącz opornik i diodę szeregowo. Ustaw anodę od strony plusa baterii, katodę od strony minusa.',components:[{id:'r1',type:'resistor',x:350,y:185},{id:'d1',type:'diode',x:510,y:185}],topology:'series',polarized:'d1'},
- {name:'Mostek sygnałów',difficulty:'hard',task:'Połącz dwie LED-y różnych kolorów w osobnych gałęziach równoległych. Zachowaj polaryzację obu diod.',components:[{id:'d1',type:'led',color:'#e03131',colorName:'czerwona',vf:1.8,x:470,y:115},{id:'d2',type:'led',color:'#1971c2',colorName:'niebieska',vf:3,x:470,y:255}],topology:'parallel',polarized:['d1','d2']},
+ {name:'Mostek sygnałów',difficulty:'hard',voltage:5,task:'Połącz dwie LED-y różnych kolorów, każdą z własnym opornikiem, w osobnych gałęziach równoległych przy 5 V. Zachowaj polaryzację obu diod.',components:[{id:'r1',type:'resistor',r:220,rs:[150,220,330,470],x:340,y:115},{id:'d1',type:'led',color:'#e03131',colorName:'czerwona',vf:1.8,x:520,y:115},{id:'r2',type:'resistor',r:220,rs:[150,220,330,470],x:340,y:255},{id:'d2',type:'led',color:'#1971c2',colorName:'niebieska',vf:3,x:520,y:255}],topology:'parallel',polarized:['d1','d2']},
  {name:'Ładowanie',difficulty:'easy',task:'Połącz baterię, opornik i kondensator szeregowo. Opornik ogranicza prąd ładowania kondensatora.',components:[{id:'r1',type:'resistor',x:330,y:185},{id:'c1',type:'capacitor',x:500,y:185}],requiredWires:[['bp','r1a'],['r1b','c1a'],['c1b','bn']]},
  {name:'Rozładowanie',difficulty:'hard',task:'Zbuduj obwód rozładowania: połącz kondensator, opornik i żarówkę szeregowo w zamkniętą pętlę.',components:[{id:'c1',type:'capacitor',x:310,y:185},{id:'r1',type:'resistor',x:440,y:185},{id:'l1',type:'lamp',x:570,y:185}],requiredWires:[['bp','c1a'],['c1b','r1a'],['r1b','l1a'],['l1b','bn']]},
  {name:'Tranzystor',difficulty:'hard',task:'Użyj tranzystora NPN jako przełącznika: podłącz żarówkę między plusem a kolektorem, emiter do minusa, a bazę przez opornik do plusa.',components:[{id:'q1',type:'transistor',x:500,y:185},{id:'r1',type:'resistor',x:300,y:95},{id:'l1',type:'lamp',x:300,y:265}],requiredWires:[['bp','l1a'],['l1b','q1c'],['q1e','bn'],['bp','r1a'],['r1b','q1b']]},
- {name:'Sterownik RC',difficulty:'hard',task:'Zbuduj sterowanie tranzystorem NPN kondensatorem: plus przez opornik do kondensatora, kondensator do bazy, żarówka od plusa do kolektora, emiter do minusa.',components:[{id:'q1',type:'transistor',x:540,y:185},{id:'r1',type:'resistor',x:300,y:85},{id:'c1',type:'capacitor',x:440,y:85},{id:'l1',type:'lamp',x:300,y:270}],requiredWires:[['bp','r1a'],['r1b','c1a'],['c1b','q1b'],['bp','l1a'],['l1b','q1c'],['q1e','bn']]}
+ {name:'Sterownik RC',difficulty:'hard',task:'Zbuduj sterowanie tranzystorem NPN kondensatorem: plus przez opornik do kondensatora, kondensator do bazy, żarówka od plusa do kolektora, emiter do minusa.',components:[{id:'q1',type:'transistor',x:540,y:185},{id:'r1',type:'resistor',x:300,y:85},{id:'c1',type:'capacitor',x:440,y:85},{id:'l1',type:'lamp',x:300,y:270}],requiredWires:[['bp','r1a'],['r1b','c1a'],['c1b','q1b'],['bp','l1a'],['l1b','q1c'],['q1e','bn']]},
+ {name:'Amperomierz',difficulty:'easy',task:'Włącz amperomierz szeregowo z żarówką. Amperomierz mierzy prąd, więc musi leżeć na drodze całego prądu. Odczyt zobaczysz na żywo pod symbolem.',components:[{id:'a1',type:'ammeter',x:350,y:185},{id:'l1',type:'lamp',x:510,y:185}],sol:[['bp','a1a'],['a1b','l1a'],['l1b','bn']],ok:S=>S.lit.l1&&S.i.a1>.05},
+ {name:'Woltomierz',difficulty:'easy',task:'Podłącz żarówkę do baterii, a woltomierz równolegle do żarówki. Woltomierz ma ogromny opór, więc włączony szeregowo zgasi obwód.',components:[{id:'l1',type:'lamp',x:420,y:215},{id:'v1',type:'voltmeter',x:500,y:90}],sol:[['bp','l1a'],['l1b','bn'],['l1a','v1a'],['l1b','v1b']],ok:S=>S.lit.l1&&S.v.v1>2.5},
+ {name:'Prawo Ohma',difficulty:'easy',voltage:5,task:'Bateria ma 5 V. Połącz szeregowo opornik i amperomierz, a kliknięciem w opornik zmieniaj jego wartość, aż prąd wyniesie około 50 mA. Wzór: R = U ÷ I.',components:[{id:'r1',type:'resistor',r:22,rs:[22,47,68,100,220],x:350,y:185},{id:'a1',type:'ammeter',x:510,y:185}],sol:[['bp','r1a'],['r1b','a1a'],['a1b','bn']],ok:S=>S.i.a1>.04&&S.i.a1<.06},
+ {name:'Przycisk',difficulty:'easy',task:'Połącz przycisk i brzęczyk szeregowo. Brzęczyk ma działać tylko wtedy, gdy przytrzymasz przycisk. Włącz „dźwięk”, aby go usłyszeć.',components:[{id:'b1',type:'button',x:280,y:185},{id:'bz',type:'buzzer',x:470,y:185}],sol:[['bp','b1a'],['b1b','bza'],['bzb','bn']],ok:(S,Z)=>S.on.bz&&!Z.on.bz},
+ {name:'Opornik do LED',difficulty:'hard',voltage:5,task:'Czerwona LED (Uₑ ≈ 1,8 V) potrzebuje 8–25 mA. Włącz ją szeregowo z opornikiem, zachowaj polaryzację i kliknięciem dobierz opornik. Wzór: R = (U − Uₑ) ÷ I.',components:[{id:'r1',type:'resistor',r:47,rs:[47,100,150,220,330,680,1000],x:350,y:185},{id:'d1',type:'led',color:'#e03131',colorName:'czerwona',vf:1.8,x:510,y:185}],sol:[['bp','r1a'],['r1b','d1a'],['d1b','bn']],ok:S=>S.i.d1>.008&&S.i.d1<.025},
+ {name:'Ściemniacz',difficulty:'hard',voltage:3,task:'Żarówka ma świecić przyćmiona, z jasnością między 25% a 70%. Włącz ją szeregowo z opornikiem i dobierz jego wartość kliknięciem.',components:[{id:'r1',type:'resistor',r:5,rs:[5,10,22,47,100],x:350,y:185},{id:'l1',type:'lamp',x:510,y:185}],sol:[['bp','r1a'],['r1b','l1a'],['l1b','bn']],ok:S=>S.b.l1>.25&&S.b.l1<.7},
+ {name:'Dzielnik napięcia',difficulty:'hard',voltage:6,task:'Bateria ma 6 V. Połącz szeregowo dwa oporniki (200 Ω i 100 Ω) i podłącz woltomierz tak, aby pokazał około 2 V.',components:[{id:'r1',type:'resistor',r:200,x:330,y:105},{id:'r2',type:'resistor',r:100,x:330,y:265},{id:'v1',type:'voltmeter',x:540,y:185}],sol:[['bp','r1a'],['r1b','r2a'],['r2b','bn'],['r2a','v1a'],['r2b','v1b']],ok:S=>Math.abs(S.v.v1-2)<.25},
+ {name:'Zabezpieczona żarówka',difficulty:'hard',voltage:9,task:'Bateria ma 9 V, a bezpiecznik wytrzymuje 0,2 A. Włącz szeregowo bezpiecznik, opornik i żarówkę. Dobierz opornik tak, by bezpiecznik się nie przepalił, a żarówka świeciła. Przepalony bezpiecznik wymienisz kliknięciem.',components:[{id:'f1',type:'fuse',rating:.2,x:310,y:185},{id:'r1',type:'resistor',r:10,rs:[10,22,47,100],x:440,y:185},{id:'l1',type:'lamp',x:570,y:185}],sol:[['bp','f1a'],['f1b','r1a'],['r1b','l1a'],['l1b','bn']],ok:S=>S.b.l1>.1},
+ {name:'Wyłącznik tranzystorowy',difficulty:'hard',task:'Zbuduj wyłącznik tranzystorowy: żarówka między plusem a kolektorem, emiter do minusa, a przycisk i opornik prowadzą od plusa do bazy. Żarówka ma świecić tylko przy wciśniętym przycisku.',components:[{id:'q1',type:'transistor',x:540,y:185},{id:'b1',type:'button',x:250,y:95},{id:'r1',type:'resistor',r:1000,x:400,y:95},{id:'l1',type:'lamp',x:330,y:270}],sol:[['bp','b1a'],['b1b','r1a'],['r1b','q1b'],['bp','l1a'],['l1b','q1c'],['q1e','bn']],ok:(S,Z)=>S.lit.l1&&!Z.lit.l1},
+ {name:'Latarka z pomiarami',difficulty:'hard',task:'Zbuduj latarkę z pomiarami: wyłącznik, amperomierz i żarówka szeregowo, a woltomierz równolegle do żarówki. Zamknij wyłącznik i sprawdź.',components:[{id:'sw',type:'switch',x:270,y:185},{id:'a1',type:'ammeter',x:400,y:185},{id:'l1',type:'lamp',x:540,y:185},{id:'v1',type:'voltmeter',x:470,y:90}],sol:[['bp','swa'],['swb','a1a'],['a1b','l1a'],['l1b','bn'],['l1a','v1a'],['l1b','v1b']],ok:S=>S.lit.l1&&S.i.a1>.1&&S.v.v1>2.5},
+ {name:'Wolna pracownia',difficulty:'easy',free:true,voltage:5,task:'Wolny stół laboratoryjny ze wszystkimi elementami. Łącz je dowolnie, zmieniaj napięcie, klikaj opornik, przytrzymuj przycisk i obserwuj prąd oraz pomiary na żywo.',components:[{id:'l1',type:'lamp',x:300,y:95},{id:'d1',type:'led',color:'#2f9e44',colorName:'zielona',vf:2.2,x:450,y:95},{id:'r1',type:'resistor',r:220,rs:[47,100,220,470,1000],x:600,y:95},{id:'m1',type:'motor',x:300,y:185},{id:'bz',type:'buzzer',x:450,y:185},{id:'sw',type:'switch',x:600,y:185},{id:'a1',type:'ammeter',x:300,y:275},{id:'v1',type:'voltmeter',x:450,y:275},{id:'b1',type:'button',x:600,y:275}]}
 ];
 let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false);
 const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,y:c.y}])));
@@ -194,8 +217,68 @@ function routePoints(from,to,waypoints=[]){
  return routed.filter((p,i,a)=>i===0||p.x!==a[i-1].x||p.y!==a[i-1].y);
 }
 const pathOf=points=>points.map((p,i)=>`${i?'L':'M'}${p.x} ${p.y}`).join(' ');
+let cblown={},cbtn=false,hintSet=new Set(),au=null,ao=null;
+const LB={lamp:'żarówki',switch:'wyłącznika',resistor:'opornika',motor:'silnika',fuse:'bezpiecznika',buzzer:'brzęczyka',diode:'diody',capacitor:'kondensatora',transistor:'tranzystora',led:'LED',ammeter:'amperomierza',voltmeter:'woltomierza',button:'przycisku'};
+const glow=(b,col,x,y)=>b>.03?`<circle cx="${x}" cy="${y}" r="38" fill="${col}" opacity="${(b*.65).toFixed(2)}"/>`:'';
+try{(JSON.parse(localStorage.getItem('obwody1'))||[]).forEach((v,i)=>{if(i<C.length)csolved[i]=!!v})}catch(e){}
+const sv=()=>{try{localStorage.setItem('obwody1',JSON.stringify(csolved))}catch(e){}};
+function buzz(on){const e=$('csnd');if(!e||!e.checked)on=false;
+ if(on&&!ao){au=au||new AudioContext();ao=au.createOscillator();const g=au.createGain();g.gain.value=.04;ao.type='square';ao.frequency.value=440;ao.connect(g);g.connect(au.destination);ao.start()}
+ else if(!on&&ao){ao.stop();ao=null}}
+function sim(btn){
+ const lv=C[ci],uf={},f=x=>uf[x]&&uf[x]!==x?(uf[x]=f(uf[x])):x;
+ cw.forEach(w=>{const a=f(w.from),b=f(w.to);if(a!==b)uf[a]=b});
+ const E=[],U=cvolt[ci],S={i:{},v:{},b:{},lit:{},on:{},ovl:{},bad:[],snd:false,ib:0};
+ for(const c of lv.components){
+  const t=c.id,a=t+'a',b=t+'b',y=c.type;
+  const Rr={lamp:20,motor:15,buzzer:50,fuse:.5,ammeter:.05,voltmeter:1e6,resistor:c.r||100}[y];
+  if(y==='switch'){if(cclosed)E.push({id:t,a,b,g:100})}
+  else if(y==='button'){if(btn||cbtn)E.push({id:t,a,b,g:100})}
+  else if(y==='diode'||y==='led')E.push({id:t,a,b,d:1,vf:y==='led'?c.vf:.7});
+  else if(y==='transistor'){const be={id:t,a:t+'b',b:t+'e',d:1,vf:.7};E.push(be,{id:t+'ce',a:t+'c',b:t+'e',dep:be})}
+  else if(Rr&&!(y==='fuse'&&cblown[ci+t]))E.push({id:t,a,b,g:1/Rr});
+ }
+ const gnd=f('bn'),ix={};let n=0;
+ const nd=x=>{x=f(x);return x===gnd?-1:(x in ix?ix[x]:(ix[x]=n++))};
+ const bp=nd('bp');E.forEach(e=>{e.p=nd(e.a);e.q=nd(e.b)});
+ const gOf=e=>e.d?(e.on?.5:1e-9):e.dep?(e.dep.on?.5:1e-9):e.g;
+ let V=[];const vv=p=>p<0?0:V[p];
+ for(let it=0;it<20;it++){
+  const G=Array.from({length:n},()=>Array(n+1).fill(0));
+  const st=(p,q,g,ie)=>{if(p>=0){G[p][p]+=g;G[p][n]+=ie;if(q>=0)G[p][q]-=g}if(q>=0){G[q][q]+=g;G[q][n]-=ie;if(p>=0)G[q][p]-=g}};
+  for(let k=0;k<n;k++)G[k][k]+=1e-9;
+  if(bp>=0){G[bp][bp]+=2;G[bp][n]+=U*2}
+  for(const e of E){const g=gOf(e);st(e.p,e.q,g,e.d&&e.on?g*e.vf:0)}
+  for(let c=0;c<n;c++){let m=c;for(let r=c+1;r<n;r++)if(Math.abs(G[r][c])>Math.abs(G[m][c]))m=r;[G[c],G[m]]=[G[m],G[c]];
+   for(let r=0;r<n;r++)if(r!==c){const k=G[r][c]/G[c][c];if(k)for(let j=c;j<=n;j++)G[r][j]-=k*G[c][j]}}
+  V=G.map((r,k)=>r[n]/r[k]);
+  let ch=0;
+  for(const e of E)if(e.d){const d=vv(e.p)-vv(e.q);if(!e.on&&d>e.vf+1e-6){e.on=1;ch=1}else if(e.on&&d<e.vf-1e-6){e.on=0;ch=1}}
+  if(!ch)break;
+ }
+ for(const e of E){const g=gOf(e),d=vv(e.p)-vv(e.q);S.i[e.id]=Math.abs(g*d-(e.d&&e.on?g*e.vf:0));S.v[e.id]=Math.abs(d)}
+ S.ib=bp<0?U*2:(U-V[bp])*2;
+ for(const c of lv.components){
+  const t=c.id,i=S.i[t]||0,y=c.type;
+  if(y==='lamp'){const P=i*i*20;S.b[t]=Math.min(1,P/.45);S.lit[t]=S.b[t]>.04;if(P>2.2){S.ovl[t]=1;S.bad.push('Żarówka jest przeciążona: za duże napięcie albo brak opornika.')}}
+  else if(y==='led'){S.b[t]=i<.0005?0:Math.min(1,i/.02);S.lit[t]=S.b[t]>.04;if(i>.03){S.ovl[t]=1;S.bad.push('LED jest przeciążona ('+(i*1000).toFixed(0)+' mA). Zwiększ opornik.')}}
+  else if(y==='motor'){S.b[t]=Math.min(1,i/.15);S.on[t]=i>.01}
+  else if(y==='buzzer'){S.on[t]=i>.01;if(S.on[t])S.snd=true}
+  else if(y==='fuse'&&i>(c.rating||.5)&&!cblown[ci+t]){cblown[ci+t]=1;return sim(btn)}
+  if(y==='fuse'&&cblown[ci+t])S.bad.push('Bezpiecznik się przepalił. Kliknij go, aby wymienić.');
+ }
+ if(S.ib>2)S.bad.push('Zwarcie! Bateria jest połączona przewodem bez odbiornika.');
+ return S;
+}
+function chint(){const lv=C[ci],sol=lv.sol||lv.requiredWires;
+ if(!sol){$('cmsg').textContent='Dla tego układu nie ma podpowiedzi. Zastanów się, którędy ma płynąć prąd.';return}
+ const have=new Set(cw.map(w=>[w.from,w.to].sort().join('|'))),m=sol.find(p=>!have.has([...p].sort().join('|')));
+ if(!m){$('cmsg').textContent='Wszystkie przewody z podpowiedzi już są. Sprawdź wartości elementów, wyłączniki, przyciski i napięcie baterii.';return}
+ const nm=id=>{if(id==='bp')return'plus baterii';if(id==='bn')return'minus baterii';const t=lv.components.find(c=>c.id===id.slice(0,-1)).type,p=id.slice(-1);return'zacisk '+LB[t]+(t==='led'||t==='diode'?(p==='a'?' (A)':' (K)'):t==='transistor'?' ('+p.toUpperCase()+')':'')};
+ hintSet=new Set(m);$('cmsg').textContent=`Podpowiedź: połącz ${nm(m[0])} z ${nm(m[1])}. Zaciski są podświetlone.`;circuitPaint();
+}
 function circuitPaint(){
- const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
+ const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n])),S=sim(false);
  $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
  $('ctask').textContent=`Układ ${ci+1}: ${C[ci].task}`;
  $('cvolt').value=String(cvolt[ci]);
@@ -203,7 +286,7 @@ function circuitPaint(){
  for(let i=0;i<cw.length;i++){
   const w=cw[i],a=byId[w.from],b=byId[w.to];
   if(a&&b){const pts=routePoints(a,b,w.points),d=pathOf(pts);
-   svg+=`<path d="${d}" class="wire-hit" data-wire="${i}" tabindex="0" role="button" aria-label="Usuń przewód"/><path d="${d}" class="wire" data-wire="${i}" aria-hidden="true"/>`;
+   svg+=`<path d="${d}" class="wire-hit" data-wire="${i}" tabindex="0" role="button" aria-label="Usuń przewód"/><path d="${d}" class="wire${S.ib>.001?' live':''}" data-wire="${i}" aria-hidden="true"/>`;
    for(const p of pts.slice(1,-1))svg+=`<circle cx="${p.x}" cy="${p.y}" r="3" class="bend"/>`;
   }
  }
@@ -212,18 +295,20 @@ function circuitPaint(){
   if(a){const pts=routePoints(a,wireDraft.points.length?wireDraft.points[wireDraft.points.length-1]:a,wireDraft.points);if(wireDraft.points.length)svg+=`<path d="${pathOf(pts)}" class="wire draft"/>`}
  }
  for(const c of C[ci].components){
-  const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Opornik':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='capacitor'?'Kondensator':type==='transistor'?'Tranzystor NPN':`LED ${c.colorName||''}`;
+  const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Opornik '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='capacitor'?'Kondensator':type==='transistor'?'Tranzystor NPN':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':`LED ${c.colorName||''}`;
   svg+=`<g data-drag="${id}" class="drag-part">`;
   svg+=`<g transform="rotate(${angle} ${x} ${y})">`;
-  if(type==='lamp')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-11} ${y-11}L${x+11} ${y+11}M${x+11} ${y-11}L${x-11} ${y+11}" class="sym"/>`;
-  else if(type==='resistor')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/>`;
-  else if(type==='motor')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">M</text>`;
-  else if(type==='led')svg+=`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="led" style="--led-color:${c.color}"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/><path d="M${x-6} ${y-22}l7-9m-7 9h8m-2-8v8M${x+4} ${y-17}l8-8m-8 8h8m-2-8v8" class="light"/>`;
+  if(type==='lamp')svg+=glow(S.b[id],'#ffd43b',x,y)+`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-11} ${y-11}L${x+11} ${y+11}M${x+11} ${y-11}L${x-11} ${y+11}" class="sym"/>`;
+  else if(type==='resistor')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/>`+(c.rs?`<rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-res="${id}" tabindex="0" role="button" aria-label="Zmień wartość opornika" style="cursor:pointer"/>`:'');
+  else if(type==='motor')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">M</text>`+(S.on[id]?`<g class="spin" style="transform-origin:${x}px ${y}px;animation-duration:${(1.1-S.b[id]*.9).toFixed(2)}s"><circle cx="${x+16}" cy="${y}" r="3.5" fill="var(--ac)"/></g>`:'');
+  else if(type==='led')svg+=glow(S.b[id],c.color,x,y)+`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="led" style="--led-color:${c.color}"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/><path d="M${x-6} ${y-22}l7-9m-7 9h8m-2-8v8M${x+4} ${y-17}l8-8m-8 8h8m-2-8v8" class="light"/>`;
   else if(type==='diode')svg+=`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="part"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/>`;
   else if(type==='capacitor')svg+=`<line x1="${x-7}" y1="${y-22}" x2="${x-7}" y2="${y+22}" class="sym"/><line x1="${x+7}" y1="${y-22}" x2="${x+7}" y2="${y+22}" class="sym"/>`;
   else if(type==='transistor')svg+=`<circle cx="${x}" cy="${y}" r="27" class="part"/><line x1="${x-9}" y1="${y-20}" x2="${x-9}" y2="${y+20}" class="sym"/><path d="M${x-9} ${y-10}L${x+17} ${y-25}M${x+17} ${y-25}L${x+12} ${y-11}M${x+17} ${y-25}L${x+2} ${y-27}M${x-9} ${y+10}L${x+17} ${y+25}M${x+17} ${y+25}L${x+3} ${y+22}M${x+17} ${y+25}L${x+14} ${y+11}M${x-40} ${y}L${x-9} ${y}" class="sym"/>`;
-  else if(type==='fuse')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" rx="3" class="part"/><path d="M${x-14} ${y}L${x-5} ${y-6}L${x+5} ${y+6}L${x+14} ${y}" class="sym"/>`;
-  else if(type==='buzzer')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">B</text><path d="M${x+28} ${y-10}q14 10 0 20m6-27q22 17 0 34" class="sym"/>`;
+  else if(type==='fuse')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" rx="3" class="part"/><path d="${cblown[ci+id]?`M${x-14} ${y}L${x-6} ${y-6}M${x+6} ${y+6}L${x+14} ${y}`:`M${x-14} ${y}L${x-5} ${y-6}L${x+5} ${y+6}L${x+14} ${y}`}" class="sym"/>`+(cblown[ci+id]?`<rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-fix="${id}" tabindex="0" role="button" aria-label="Wymień bezpiecznik" style="cursor:pointer"/>`:'');
+  else if(type==='buzzer')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">B</text><path d="M${x+28} ${y-10}q14 10 0 20m6-27q22 17 0 34" class="sym${S.on[id]?' pulse':''}"/>`;
+  else if(type==='ammeter'||type==='voltmeter')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">${type==='ammeter'?'A':'V'}</text>`;
+  else if(type==='button'){const o=cbtn?0:12;svg+=`<circle cx="${x-10}" cy="${y}" r="3.5" class="part"/><circle cx="${x+10}" cy="${y}" r="3.5" class="part"/><line x1="${x-10}" y1="${y-o}" x2="${x+10}" y2="${y-o}" class="sym"/><line x1="${x}" y1="${y-o}" x2="${x}" y2="${y-26}" class="sym"/><line x1="${x-8}" y1="${y-26}" x2="${x+8}" y2="${y-26}" class="sym"/><rect x="${x-30}" y="${y-32}" width="60" height="52" fill="transparent" data-btn="1"/>`}
   else if(type==='switch'){
    const open=!cclosed;
    svg+=`<circle cx="${x-10}" cy="${y}" r="3.5" class="part"/><circle cx="${x+10}" cy="${y}" r="3.5" class="part"/>`;
@@ -236,6 +321,8 @@ function circuitPaint(){
   svg+=`<text x="${x}" y="${y-34}" class="ct" text-anchor="middle">${label}</text>`;
   if(type==='led')svg+=`<text x="${x}" y="${y+39}" class="cm" text-anchor="middle">Uₑ ≈ ${c.vf.toFixed(1)} V · A → K</text>`;
   if(type==='diode')svg+=`<text x="${x}" y="${y+39}" class="cm" text-anchor="middle">A → K</text>`;
+  if(type==='ammeter'||type==='voltmeter')svg+=`<text x="${x}" y="${y+42}" class="voltage" text-anchor="middle">${type==='ammeter'?((S.i[id]||0)*1000).toFixed(1)+' mA':(S.v[id]||0).toFixed(2)+' V'}</text>`;
+  if(S.ovl[id])svg+=`<text x="${x}" y="${y+58}" class="wt" text-anchor="middle">⚠ przeciążenie</text>`;
   if(type==='switch')svg+=`<text x="${x}" y="${y+42}" class="cm" text-anchor="middle">${cclosed?'zamknięty':'otwarty'} – kliknij</text>`;
   svg+='</g>';
   svg+=`<g data-rotate="${id}" tabindex="0" role="button" aria-label="Obróć: ${label}"><circle cx="${x+34}" cy="${y-28}" r="12" class="rotate-part"/><text x="${x+34}" y="${y-23}" text-anchor="middle" class="rotate-label">↻</text></g>`;
@@ -243,11 +330,13 @@ function circuitPaint(){
  }
  for(const n of nodes){
   const selected=wireDraft&&wireDraft.from===n.id?' sel':'';
-  svg+=`<circle cx="${n.x}" cy="${n.y}" r="9" class="term${selected}" data-terminal="${n.id}" tabindex="0" role="button" aria-label="Zacisk ${n.label||n.id}"/>`;
+  svg+=`<circle cx="${n.x}" cy="${n.y}" r="9" class="term${selected}${hintSet.has(n.id)?' hint':''}" data-terminal="${n.id}" tabindex="0" role="button" aria-label="Zacisk ${n.label||n.id}"/>`;
   if(n.component&&n.label!=='a'&&n.label!=='b')svg+=`<text x="${n.x}" y="${n.y-13}" class="cm" text-anchor="middle" transform="rotate(${n.angle} ${n.x} ${n.y})">${n.label}</text>`;
  }
  svg+='</svg>';
  $('cboard').innerHTML=svg;
+ $('cread').innerHTML=cw.length||C[ci].free?`Prąd z baterii: <b>${(S.ib*1000).toFixed(0)} mA</b>${[...new Set(S.bad)].map(x=>' <span class="warn">⚠ '+x+'</span>').join('')}`:'Narysuj przewody, a zobaczysz prąd i zachowanie elementów na żywo.';
+ buzz(S.snd);
  $('ccancel').disabled=!wireDraft;
  $('cnext').disabled=ci===C.length-1;
 }
@@ -260,6 +349,7 @@ function cConnected(edges,start,end){
 }
 function checkCircuit(){
  const level=C[ci],components=level.components;
+ if(level.free){csolved[ci]=true;sv();$('cmsg').innerHTML='<span class="success">Wolna pracownia: eksperymentuj do woli. Zaliczone!</span>';circuitPaint();return}
  const edges=cw.map(w=>[w.from,w.to]);
  for(const c of components)if(!['switch','capacitor','transistor'].includes(c.type)||cclosed)edges.push([c.id+'a',c.id+'b']);
  const connected=cConnected(edges,'bp','bn');
@@ -289,8 +379,11 @@ function checkCircuit(){
  });
  const voltageWrong=ok&&level.voltage!==undefined&&Math.abs(cvolt[ci]-level.voltage)>0.01;
  if(voltageWrong)ok=false;
- $('cmsg').innerHTML=ok?'<span class="success">Działa! Obwód spełnia warunki tego układu.</span>':voltageWrong?`Dobierz napięcie baterii do zadania: ${level.voltage.toFixed(1)} V.`:'Obwód nie spełnia jeszcze warunków. Sprawdź, czy jest zamknięty, wymagane elementy są podłączone, a polaryzacja LED jest prawidłowa.';
- if(ok)csolved[ci]=true;
+ const S=sim(true),Z=sim(false);
+ if(ok&&level.ok&&!voltageWrong)ok=!!level.ok(S,Z);
+ const bad=ok&&S.bad.length>0;if(bad)ok=false;
+ $('cmsg').innerHTML=ok?'<span class="success">Działa! Obwód spełnia warunki tego układu.</span>':bad?`<span class="warn">${[...new Set(S.bad)].join(' ')}</span>`:voltageWrong?`Dobierz napięcie baterii do zadania: ${level.voltage.toFixed(1)} V.`:'Obwód nie spełnia jeszcze warunków. Sprawdź, czy jest zamknięty, wymagane elementy są podłączone, a polaryzacja LED jest prawidłowa.';
+ if(ok){csolved[ci]=true;sv()}
  circuitPaint();
 }
 function circuitPoint(event,svg){
@@ -333,7 +426,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-rotate],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-res],[data-fix],[data-rotate],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#crandom');
  if(!t)return;
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
@@ -341,12 +434,15 @@ document.addEventListener('click',e=>{
   const choices=available.filter(x=>x.index!==ci),pool=choices.length?choices:available,choice=pool[Math.floor(Math.random()*pool.length)];
   ci=choice.index;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return;
  }
+ if(t.dataset.res){const c=C[ci].components.find(x=>x.id===t.dataset.res),k=c.rs.indexOf(c.r||100);c.r=c.rs[(k+1)%c.rs.length];$('cmsg').textContent='';circuitPaint();return}
+ if(t.dataset.fix){delete cblown[ci+t.dataset.fix];circuitPaint();return}
+ if(t.id==='chint'){chint();return}
  if(t.dataset.rotate){
   const id=t.dataset.rotate;crot[ci][id]=(crot[ci][id]+90)%360;
   $('cmsg').textContent='';circuitPaint();return;
  }
  if(t.dataset.terminal){
-  const id=t.dataset.terminal;
+  const id=t.dataset.terminal;hintSet=new Set();
   if(!wireDraft){wireDraft={from:id,points:[]};circuitPaint();return}
   if(wireDraft.from===id){wireDraft=null;circuitPaint();return}
   const edge=[wireDraft.from,id],existing=cw.findIndex(w=>(w.from===edge[0]&&w.to===edge[1])||(w.from===edge[1]&&w.to===edge[0]));
@@ -366,14 +462,18 @@ document.addEventListener('click',e=>{
  }
  if(t.id==='ccheck'){checkCircuit();return}
  if(t.id==='ccancel'){wireDraft=null;circuitPaint();return}
- if(t.id==='cclear'){cw=[];wireDraft=null;$('cmsg').textContent='';circuitPaint();return}
+ if(t.id==='cclear'){cblown={};cw=[];wireDraft=null;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='cnext'){ci=Math.min(ci+1,C.length-1);cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint()}
 });
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-rotate],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-res],[data-fix],[data-rotate],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
 
+document.addEventListener('pointerdown',e=>{if(e.target.closest('[data-btn]')){cbtn=true;circuitPaint()}});
+const relBtn=()=>{if(cbtn){cbtn=false;circuitPaint()}};
+document.addEventListener('pointerup',relBtn);document.addEventListener('pointercancel',relBtn);
+document.addEventListener('change',e=>{if(e.target.id==='csnd')circuitPaint()});
 circuitPaint();</script></body></html>
