@@ -26,6 +26,10 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #lv{display:flex;gap:6px;flex-wrap:wrap}
 #lv button{width:46px;padding:3px 0;line-height:1.2}
 #lv small{color:var(--ac);font-size:11px}
+#mode{display:flex;gap:6px}
+.navlink{display:inline-block;text-decoration:none;color:var(--tx);background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:6px 10px}
+.navlink:hover{border-color:var(--tx)}
+.navlink.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:700}
 #lv .p small{color:var(--bg)}
 .pn{background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:14px}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
@@ -71,7 +75,8 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .t.big{font-size:28px;font-weight:700}
 </style></head><body>
 <main>
-<header><h1>Rejestr</h1><nav id="lv" aria-label="Poziomy"></nav></header>
+<header><h1>Rejestr</h1><nav id="mode" aria-label="Tryb gry"><a class="navlink p" href="index.html">Rejestr</a><a class="navlink" href="obwody.html">Obwody</a></nav><nav id="lv" aria-label="Poziomy"></nav></header>
+
 <details class="pn" id="how" open><summary>Jak grać</summary>
 <p><b>Cel.</b> W każdym poziomie piszesz program, który zamienia liczby z wejścia na dokładnie takie wyjście, jakie pokazuje wiersz „Oczekiwane wyjście”.</p>
 <p><b>Maszyna.</b> Liczby czekają na wejściu. Maszyna ma jedną „rękę”, czyli akumulator ACC, który mieści tylko jedną liczbę, oraz cztery komórki pamięci [0] do [3]. Cała gra polega na przenoszeniu liczb między tymi miejscami i na ich obliczaniu.</p>
