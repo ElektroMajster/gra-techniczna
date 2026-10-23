@@ -38,7 +38,9 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #ops b{color:var(--ac)}
 .r{display:flex;gap:6px;align-items:center;margin-bottom:5px;padding:3px;border-radius:4px;border:2px solid transparent}
 .r.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 16%,transparent)}
-.no{width:22px;text-align:right;color:var(--mu)}
+.no{width:22px;text-align:right;color:var(--mu);cursor:grab;user-select:none}
+.r button{padding:4px 8px}
+.r.ov{border-style:dashed;border-color:var(--ac)}
 .r .o{flex:1;min-width:0}
 .r .a{flex:0 0 74px}
 #code.lock{pointer-events:none}
@@ -81,7 +83,7 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 <p><b>Cel.</b> W każdym poziomie piszesz program, który zamienia liczby z wejścia na dokładnie takie wyjście, jakie pokazuje wiersz „Oczekiwane wyjście”.</p>
 <p><b>Maszyna.</b> Liczby czekają na wejściu. Maszyna ma jedną „rękę”, czyli akumulator ACC, który mieści tylko jedną liczbę, oraz cztery komórki pamięci [0] do [3]. Cała gra polega na przenoszeniu liczb między tymi miejscami i na ich obliczaniu.</p>
 <p><b>Schemat.</b> Rysunek w ramce „Maszyna” pokazuje budowę: wejście, akumulator ACC, pamięć, wyjście i jednostkę sterującą. Po każdej instrukcji podświetla się strzałka, którędy popłynęły dane.</p>
-<p><b>Pisanie programu.</b> Kliknij „+ instrukcja” i wybierz instrukcję z listy. Jeśli potrzebuje argumentu, wybierz obok komórkę [n] albo numer linii, do której ma skoczyć. Przycisk × usuwa linię, a skoki same się dostosują. Program wykonuje się od linii 1 w dół, a skok zmienia kolejność. Instrukcje dostępne na danym poziomie opisano poniżej, w ramce poziomu.</p>
+<p><b>Pisanie programu.</b> Kliknij „+ instrukcja” i wybierz instrukcję z listy. Jeśli potrzebuje argumentu, wybierz obok komórkę [n] albo numer linii, do której ma skoczyć. Strzałki ▲ ▼ przy linii (albo przeciągnięcie jej numeru) zmieniają kolejność instrukcji, a przycisk × usuwa linię. Skoki same się dostosują. Program wykonuje się od linii 1 w dół, a skok zmienia kolejność. Instrukcje dostępne na danym poziomie opisano poniżej, w ramce poziomu.</p>
 <p><b>Skoki warunkowe.</b> SKOK zawsze przeskakuje do wskazanej linii. SKZ przeskakuje tylko wtedy, gdy ACC wynosi 0, a SKU tylko wtedy, gdy ACC jest ujemny. W przeciwnym razie maszyna idzie do następnej linii.</p>
 <p><b>Uruchamianie.</b> „Krok” wykonuje jedną instrukcję, „Start” puszcza program automatycznie (suwak zmienia szybkość), a „Reset” czyści maszynę i odblokowuje edycję. Podświetlona linia to ta, która wykona się jako następna. Patrz na ACC i pamięć po każdym kroku, tak jak w debuggerze.</p>
 <p><b>Koniec programu.</b> Program kończy się, gdy WEJ nie ma już czego pobrać albo gdy maszyna przejdzie za ostatnią linię. Dlatego pętla zakończona skokiem na początek sama się zatrzyma po przeczytaniu całego wejścia.</p>
@@ -172,7 +174,7 @@ let li=0,st=null,tm=0,auto=0;const pr=L.map(()=>[]);
 function nav(){$('lv').innerHTML=L.map((l,i)=>`<button data-l="${i}" ${i>0&&!(sv[i-1]>0)?'disabled':''} class="${i==li?'p':''}" title="${l.n}">${i+1}<br><small>${'★'.repeat(sv[i]|0)||'–'}</small></button>`).join('')}
 function brief(){const l=L[li];$('brief').innerHTML=`<h2>Poziom ${li+1}: ${l.n}</h2><p>${l.d}</p><div id="ops">${l.ops.map(o=>`<b>${o}${kd(o)?' n':''}</b><span>${D[o]}</span>`).join('')}</div><p class="mu">Limit programu: ${l.ml||14} linii. Wzorzec: ${l.pl} linii i ${l.ps} kroków na tym przykładzie. Gwiazdka za rozwiązanie, za nie więcej niż ${l.pl} linii i za nie więcej niż ${l.ps} kroków.</p>`}
 function code(){const l=L[li],p=pr[li];
- $('rows').innerHTML=p.length?p.map(([o,a],i)=>`<div class="r"><span class="no">${i+1}</span><select class="o" data-i="${i}" aria-label="Instrukcja ${i+1}">${l.ops.map(x=>`<option${x==o?' selected':''}>${x}</option>`).join('')}</select>${kd(o)==2?`<select class="a" data-i="${i}" aria-label="Linia docelowa">${p.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>→ ${k+1}</option>`).join('')}</select>`:kd(o)==1?`<select class="a" data-i="${i}" aria-label="Komórka pamięci">${l.m.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>[${k}]</option>`).join('')}</select>`:'<span class="a"></span>'}<button data-x="${i}" title="Usuń linię ${i+1}">×</button></div>`).join(''):'<p class="mu">Program jest pusty. Dodaj pierwszą instrukcję.</p>';
+ $('rows').innerHTML=p.length?p.map(([o,a],i)=>`<div class="r" data-i="${i}"><span class="no" draggable="true" data-i="${i}" title="Przeciągnij, aby zmienić kolejność">${i+1}</span><select class="o" data-i="${i}" aria-label="Instrukcja ${i+1}">${l.ops.map(x=>`<option${x==o?' selected':''}>${x}</option>`).join('')}</select>${kd(o)==2?`<select class="a" data-i="${i}" aria-label="Linia docelowa">${p.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>→ ${k+1}</option>`).join('')}</select>`:kd(o)==1?`<select class="a" data-i="${i}" aria-label="Komórka pamięci">${l.m.map((_,k)=>`<option value="${k}"${k==a?' selected':''}>[${k}]</option>`).join('')}</select>`:'<span class="a"></span>'}<button data-u="${i}" title="Przesuń w górę" aria-label="Przesuń linię ${i+1} w górę"${i?'':' disabled'}>▲</button><button data-d="${i}" title="Przesuń w dół" aria-label="Przesuń linię ${i+1} w dół"${i<p.length-1?'':' disabled'}>▼</button><button data-x="${i}" title="Usuń linię ${i+1}">×</button></div>`).join(''):'<p class="mu">Program jest pusty. Dodaj pierwszą instrukcję.</p>';
  $('add').disabled=p.length>=(l.ml||14)}
 const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
 function schema(s){
@@ -214,12 +216,15 @@ function start(){if(!st){st=mk(L[li],L[li].i);$('msg').textContent=''}}
 function reset(){auto=0;clearTimeout(tm);st=null;$('msg').textContent='';paint()}
 function load(i){reset();li=i;nav();brief();code();paint()}
 const del=i=>{const p=pr[li];p.splice(i,1);p.forEach(x=>{if(kd(x[0])==2){if(x[1]>i)x[1]--;x[1]=Math.max(0,Math.min(x[1],p.length-1))}});code()};
+const mv=(f,t)=>{const p=pr[li];if(t<0||t>=p.length||f===t)return;const m=k=>k===f?t:f<t&&k>f&&k<=t?k-1:f>t&&k>=t&&k<f?k+1:k;p.forEach(x=>{if(kd(x[0])==2)x[1]=m(x[1])});p.splice(t,0,p.splice(f,1)[0]);code()};
 
 document.addEventListener('change',e=>{const t=e.target,i=+t.dataset.i;if(t.dataset.i===undefined)return;const p=pr[li];
  if(t.classList.contains('o')){if(kd(t.value)!=kd(p[i][0]))p[i][1]=0;p[i][0]=t.value;code()}else p[i][1]=+t.value});
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
  if(d.l!==undefined)load(+d.l);
  else if(d.x!==undefined)del(+d.x);
+ else if(d.u!==undefined)mv(+d.u,+d.u-1);
+ else if(d.d!==undefined)mv(+d.d,+d.d+1);
  else if(b.id=='add'){pr[li].push([L[li].ops[0],0]);code()}
  else if(b.id=='st'){start();step(st,pr[li]);if(st.s!='run')fin();paint()}
  else if(b.id=='go'){if(auto){auto=0;clearTimeout(tm);paint()}else{start();auto=1;tick()}}
@@ -228,5 +233,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 
 try{if(localStorage.getItem('rejestr_how')=='0')$('how').open=false}catch(e){}
 $('how').addEventListener('toggle',()=>{try{localStorage.setItem('rejestr_how',$('how').open?'1':'0')}catch(e){}});
+const clr=()=>document.querySelectorAll('.r.ov').forEach(r=>r.classList.remove('ov'));
+document.addEventListener('dragstart',e=>{const n=e.target.closest&&e.target.closest('.no');if(!n)return;e.dataTransfer.setData('text/plain',n.dataset.i);e.dataTransfer.effectAllowed='move'});
+document.addEventListener('dragover',e=>{const r=e.target.closest&&e.target.closest('.r');if(r){e.preventDefault();clr();r.classList.add('ov')}});
+document.addEventListener('dragend',clr);
+document.addEventListener('drop',e=>{const r=e.target.closest&&e.target.closest('.r');clr();if(!r)return;e.preventDefault();const f=+e.dataTransfer.getData('text/plain'),t=+r.dataset.i;if(!isNaN(f)&&!isNaN(t))mv(f,t)});
 const s0=L.findIndex((_,i)=>!(sv[i]>0));load(s0<0?0:s0);
 </script></body></html>
