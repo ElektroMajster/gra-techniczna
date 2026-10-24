@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Podniebny Patrol - Gra Pogodowa</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#000}
+#game-container{position:relative;width:100vw;height:100vh}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:14px;right:14px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start;pointer-events:none;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);font-size:16px;font-weight:700}
+.hud-card{background:rgba(255,255,255,.15);backdrop-filter:blur(8px);padding:10px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.25);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.hud-card small{display:block;font-size:12px;font-weight:600;opacity:.9}
+#bar{height:6px;margin-top:5px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}
+#bar i{display:block;height:100%;width:100%;background:#2ed573}
+#banner{position:absolute;top:28%;left:0;right:0;padding:0 16px;text-align:center;color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.7);pointer-events:none;opacity:0;transition:opacity .5s}
+#banner.show{opacity:1}
+#banner h2{font-size:clamp(28px,6vw,56px)}
+#banner p{font-size:clamp(14px,2.5vw,22px)}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(5px);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;z-index:10;text-align:center;padding:20px}
+#overlay.hidden{display:none}
+#overlay h1{font-size:clamp(34px,7vw,48px);margin-bottom:10px}
+#overlay p{font-size:18px;max-width:560px;margin-bottom:25px;line-height:1.5}
+.btn{background:linear-gradient(135deg,#ff7f50,#ff4757);color:#fff;border:none;padding:14px 32px;font-size:18px;font-weight:700;border-radius:30px;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 4px 15px rgba(255,71,87,.4)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,71,87,.6)}
+#controls-hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.8);font-size:14px;background:rgba(0,0,0,.3);padding:8px 16px;border-radius:20px;pointer-events:none;white-space:nowrap}
+#nav{position:absolute;left:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;z-index:11}
+#nav a{color:#fff;text-decoration:none;font-size:13px;padding:6px 12px;border-radius:16px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(6px)}
+#nav a.on{background:#fff;color:#11295f;font-weight:700}
+@media(max-width:700px){#hud{font-size:13px}.hud-card{padding:6px 10px}#controls-hint{display:none}}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="canvas"></canvas>
+  <div id="hud">
+    <div class="hud-card">Wynik: <span id="score">0</span></div>
+    <div class="hud-card">Poziom <span id="lvl">1</span>: <span id="lname"></span><small id="goal"></small></div>
+    <div class="hud-card">Energia: <span id="energy">100</span>%<div id="bar"><i></i></div></div>
+  </div>
+  <div id="banner"></div>
+  <div id="controls-hint">Sterowanie: myszka, strzałki góra/dół lub dotyk</div>
+  <nav id="nav"><a href="index.html">Rejestr</a><a href="obwody.html">Obwody</a><a class="on" href="gra_samolotowa.html">Samolot</a></nav>
+  <div id="overlay">
+    <h1 id="ov-title"></h1><p id="ov-text"></p>
+    <button class="btn" id="ov-btn" onclick="startGame()">Start</button>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),canvas=$('canvas'),ctx=canvas.getContext('2d');
+let width,height,state='menu',score=0,energy=100,lvl=1,lvlSuns=0,flash=0,t=0,bannerTimer;
+function resize(){width=canvas.width=innerWidth;height=canvas.height=innerHeight}
+addEventListener('resize',resize);resize();
+
+// --- POZIOMY I POGODA ---
+// rain/snow/fog/wind/storm/hail/sand/night/rainbow: natężenie 0-1, tornado: true/false, bonus: mnożnik punktów, fc: kolor mgły, sc: ułamek chmur burzowych, drain: zużycie energii na klatkę, goal: słońca do zebrania
+const LEVELS=[
+ {n:'Pogodne niebo',d:'Zbieraj słońca i omijaj ciemne chmury.',sky:[30,144,255,112,161,255],sc:.15,goal:5},
+ {n:'Wietrzny dzień',d:'Porywy wiatru znoszą samolot w górę i w dół.',sky:[60,140,230,150,190,240],wind:.8,sc:.2,goal:6},
+ {n:'Deszczowy front',d:'Mokre skrzydła: więcej zużytej energii i wolniejsza reakcja.',sky:[75,95,125,125,145,170],rain:.8,wind:.25,sc:.3,drain:.033,goal:7},
+ {n:'Gęsta mgła',d:'Widać tylko to, co blisko. Burzowe chmury mogą czaić się wszędzie.',sky:[150,165,180,200,210,220],fog:1,sc:.3,goal:7},
+ {n:'Śnieżyca',d:'Oblodzenie sprawia, że samolot reaguje ociężale.',sky:[110,130,160,185,200,225],snow:.9,wind:.3,sc:.2,drain:.032,goal:8},
+ {n:'Wielka burza',d:'Deszcz, wiatr i pioruny. Piorun trafia w to, co jest pod chmurą!',sky:[18,26,42,52,62,82],rain:.9,wind:.7,storm:1,sc:.5,drain:.036,goal:10},
+ {n:'Tęcza po burzy',d:'Chwila wytchnienia: słońca są warte podwójnie, a energii ubywa wolniej.',sky:[90,170,255,170,215,255],rainbow:1,rain:.15,sc:.05,drain:.022,bonus:2,goal:6},
+ {n:'Grad',d:'Kulki lodu spadają z nieba. Każde trafienie odbiera energię!',sky:[70,90,120,130,150,175],hail:.8,wind:.4,sc:.3,drain:.033,goal:8},
+ {n:'Burza piaskowa',d:'Piasek ogranicza widoczność i zatyka silnik.',sky:[190,140,80,225,185,120],sand:1,fog:.55,fc:[215,180,120],wind:.5,sc:.2,drain:.034,goal:8},
+ {n:'Trąba powietrzna',d:'Lej wciąga samolot. Trzymaj się z dala od jego środka!',sky:[55,75,70,120,135,120],tornado:true,rain:.5,wind:.4,storm:.6,sc:.45,drain:.034,goal:9},
+ {n:'Noc z gwiazdami',d:'Ciemno, widać tylko okolice samolotu.',sky:[4,8,30,25,38,85],night:1,fog:.9,fc:[8,12,28],sc:.2,goal:9},
+ {n:'Huragan',d:'Grad, trąby powietrzne, deszcz i pioruny naraz. Powodzenia, pilocie!',sky:[14,20,32,45,55,70],rain:.9,hail:.5,wind:.9,storm:1,tornado:true,sc:.55,drain:.038,goal:12}
+].map(l=>({rain:0,snow:0,fog:0,wind:0,storm:0,hail:0,sand:0,night:0,rainbow:0,tornado:false,bonus:1,fc:[205,215,225],drain:.03,...l}));
+const KEYS=['rain','snow','fog','wind','storm','hail','sand','night','rainbow'];
+const cfg=()=>LEVELS[(lvl-1)%LEVELS.length];
+const goalOf=()=>cfg().goal+2*Math.floor((lvl-1)/LEVELS.length);
+const speedMul=()=>Math.min(2.2,1+.05*(lvl-1));
+const W={rain:0,snow:0,fog:0,wind:0,storm:0,hail:0,sand:0,night:0,rainbow:0,sky:[...LEVELS[0].sky],fc:[205,215,225]};
+function weatherStep(a){const c=cfg();KEYS.forEach(k=>W[k]+=(c[k]-W[k])*a);W.sky=W.sky.map((v,i)=>v+(c.sky[i]-v)*a);W.fc=W.fc.map((v,i)=>v+(c.fc[i]-v)*a)}
+
+// --- TEKSTURY CHMUR ---
+function createCloudTexture(isStorm=false){
+  const size=256,c=document.createElement('canvas');c.width=c.height=size;
+  const g2=c.getContext('2d');
+  for(let i=0;i<25;i++){
+    const x=size/2+(Math.random()-.5)*size*.5,y=size/2+(Math.random()-.5)*size*.4,r=30+Math.random()*40;
+    const g=g2.createRadialGradient(x,y,0,x,y,r);
+    if(isStorm){g.addColorStop(0,'rgba(30,35,45,.8)');g.addColorStop(.6,'rgba(20,25,35,.4)');g.addColorStop(1,'rgba(10,15,20,0)')}
+    else{g.addColorStop(0,'rgba(255,255,255,.85)');g.addColorStop(.5,'rgba(240,245,255,.4)');g.addColorStop(1,'rgba(220,230,245,0)')}
+    g2.fillStyle=g;g2.beginPath();g2.arc(x,y,r,0,Math.PI*2);g2.fill();
+  }
+  return c;
+}
+const fairCloudTexture=createCloudTexture(false),stormCloudTexture=createCloudTexture(true);
+
+// --- GRACZ ---
+const player={x:100,y:height/2,targetY:height/2,size:30,g:0,
+  draw(){
+    ctx.save();ctx.translate(this.x,this.y);
+    ctx.rotate((this.targetY-this.y)*.002+this.g*.03);
+    ctx.fillStyle='#ff4757';ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(-15,-12);ctx.lineTo(-10,0);ctx.lineTo(-15,12);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ffa502';ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-8,-25);ctx.lineTo(2,-25);ctx.lineTo(12,0);ctx.lineTo(2,25);ctx.lineTo(-8,25);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#70a1ff';ctx.beginPath();ctx.arc(5,-2,4,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  },
+  update(k,gust){
+    const sp=.1*(1-.5*W.snow)*(1-.2*W.rain); // śnieg i deszcz pogarszają sterowność
+    this.g=gust;
+    this.y+=(this.targetY-this.y)*Math.min(1,sp*k)+gust*k;
+    this.y=Math.max(30,Math.min(height-30,this.y));
+  }
+};
+const setY=v=>player.targetY=Math.max(30,Math.min(height-30,v));
+const placePlayer=()=>{player.y=player.targetY=height/2};
+
+// --- CHMURY ---
+class Cloud{
+  constructor(){this.reset(true)}
+  reset(initial=false){
+    this.x=initial?Math.random()*width:width+200;
+    this.y=Math.random()*height;
+    this.isStorm=Math.random()<cfg().sc;
+    this.scale=.8+Math.random()*1.5;
+    this.speed=(1+Math.random()*2)*(this.isStorm?1.2:.8);
+    this.texture=this.isStorm?stormCloudTexture:fairCloudTexture;
+    this.width=this.height=256*this.scale;
+    this.timer=0;this.flashing=false;this.hit=false;
+    this.thr=(100+Math.random()*250)/(.4+W.storm);
+  }
+  get step(){return 28*this.scale}
+  update(k,sm){
+    this.x-=this.speed*sm*k*(1+W.wind*.5);
+    if(this.x<-this.width)this.reset();
+    if(this.isStorm){
+      this.timer+=k;
+      if(!this.flashing&&this.timer>this.thr){
+        this.flashing=true;this.hit=false;this.timer=0;
+        this.bolt=[0,1,2,3].map(()=>Math.random()*30-15);
+        if(this.x>0&&this.x<width)flash=Math.max(flash,.15+.2*W.storm);
+      }else if(this.flashing&&this.timer>14){
+        this.flashing=false;this.timer=0;this.thr=(150+Math.random()*250)/(.4+W.storm);
+      }
+    }
+  }
+  draw(){
+    ctx.drawImage(this.texture,this.x-this.width/2,this.y-this.height/2,this.width,this.height);
+    if(this.flashing){
+      ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.shadowColor='#9cf';ctx.shadowBlur=12;
+      ctx.beginPath();ctx.moveTo(this.x,this.y);
+      this.bolt.forEach((dx,i)=>ctx.lineTo(this.x+dx,this.y+(i+1)*this.step));
+      ctx.stroke();ctx.restore();
+    }
+  }
+}
+
+// --- SŁOŃCA ---
+class Sun{
+  constructor(){this.reset()}
+  reset(){this.x=width+50+Math.random()*300;this.y=50+Math.random()*(height-100);this.radius=16;this.angle=0}
+  update(k,sm){this.x-=2.5*sm*k;this.angle+=.05*k;if(this.x<-this.radius)this.reset()}
+  draw(){
+    ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.angle);
+    ctx.fillStyle='#ffa502';
+    for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillRect(-2,-24,4,8)}
+    ctx.beginPath();ctx.arc(0,0,this.radius,0,Math.PI*2);ctx.fillStyle='#eccc68';ctx.fill();
+    ctx.restore();
+  }
+}
+const clouds=Array.from({length:15},()=>new Cloud());
+const suns=Array.from({length:3},()=>new Sun());
+
+// --- CZĄSTKI POGODY (pule; rysowana jest część zależna od natężenia) ---
+const mkP=(n,f)=>Array.from({length:n},()=>({x:Math.random()*width,y:Math.random()*height,...f()}));
+const rain=mkP(180,()=>({v:14+Math.random()*8}));
+const snow=mkP(140,()=>({v:1+Math.random()*2,ph:Math.random()*6.28}));
+const streaks=mkP(30,()=>({v:18+Math.random()*16,l:50+Math.random()*90}));
+
+function drawStreaks(k,gust){
+  const n=Math.round(streaks.length*W.wind);if(!n)return;
+  ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<n;i++){
+    const p=streaks[i];p.x-=p.v*k;p.y=(p.y+gust*1.5*k+height)%height;
+    if(p.x<-p.l){p.x=width+20;p.y=Math.random()*height}
+    ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+p.l,p.y-gust*3);
+  }
+  ctx.stroke();
+}
+function drawFog(){
+  if(W.fog<.01)return;
+  const g=ctx.createRadialGradient(player.x,player.y,90,player.x,player.y,380);
+  const f=W.fc.map(Math.round).join(',');g.addColorStop(0,`rgba(${f},0)`);g.addColorStop(1,`rgba(${f},${.93*W.fog})`);
+  ctx.fillStyle=g;ctx.fillRect(0,0,width,height);
+}
+function drawPrecip(k){
+  const n=Math.round(rain.length*W.rain);
+  if(n){
+    ctx.strokeStyle='rgba(190,215,255,.55)';ctx.lineWidth=1.5;ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const p=rain[i];p.y+=p.v*k;p.x-=p.v*.3*k;
+      if(p.y>height){p.y=-20;p.x=Math.random()*width+80}
+      if(p.x<-20)p.x+=width+40;
+      ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+p.v*.3,p.y-p.v*1.2);
+    }
+    ctx.stroke();
+  }
+  const m=Math.round(snow.length*W.snow);
+  ctx.fillStyle='rgba(255,255,255,.9)';
+  for(let i=0;i<m;i++){
+    const p=snow[i];p.y+=p.v*k;p.x+=(Math.sin(t/600+p.ph)*.8-1.2)*k;
+    if(p.y>height){p.y=-5;p.x=Math.random()*width}
+    if(p.x<-5)p.x=width+5;
+    ctx.beginPath();ctx.arc(p.x,p.y,1.5+p.v*.8,0,6.28);ctx.fill();
+  }
+}
+
+// --- NOWE ZJAWISKA: gwiazdy, tęcza, grad, piasek, trąba powietrzna ---
+const stars=mkP(70,()=>({ph:Math.random()*6.28}));
+const hail=mkP(70,()=>({v:9+Math.random()*5}));
+const sand=mkP(100,()=>({v:20+Math.random()*14}));
+const tor={on:false,x:0,y:0,ph:0,wait:300};
+function drawSky2(k){
+  if(W.night>.01){
+    ctx.fillStyle='#fff';
+    const n=Math.round(stars.length*W.night);
+    for(let i=0;i<n;i++){const p=stars[i];p.x-=.2*k;if(p.x<0)p.x=width;ctx.globalAlpha=(.5+.5*Math.sin(t/400+p.ph))*W.night;ctx.fillRect(p.x,p.y,2,2)}
+    ctx.globalAlpha=1;
+  }
+  if(W.rainbow>.01){
+    ctx.lineWidth=14;ctx.globalAlpha=.35*W.rainbow;
+    const R=Math.min(width*.45,height*.9);
+    ['#ff4757','#ff9f43','#feca57','#2ed573','#48dbfb','#5f27cd','#a55eea'].forEach((c,i)=>{ctx.strokeStyle=c;ctx.beginPath();ctx.arc(width*.55,height*1.05,R-i*14,Math.PI,0);ctx.stroke()});
+    ctx.globalAlpha=1;
+  }
+}
+function drawHazards(k,playing){
+  const h=Math.round(hail.length*W.hail);
+  ctx.fillStyle='rgba(235,245,255,.95)';ctx.strokeStyle='rgba(120,150,190,.8)';ctx.lineWidth=1;
+  for(let i=0;i<h;i++){
+    const p=hail[i];p.y+=p.v*k;p.x-=p.v*.4*k;
+    if(p.y>height||p.x<-20){p.y=-20;p.x=Math.random()*width+120}
+    ctx.beginPath();ctx.arc(p.x,p.y,5,0,6.28);ctx.fill();ctx.stroke();
+    if(playing&&Math.hypot(player.x-p.x,player.y-p.y)<20){energy-=2.5;player.y+=(Math.random()-.5)*14;p.y=-20;p.x=Math.random()*width+120}
+  }
+  const n=Math.round(sand.length*W.sand);
+  ctx.strokeStyle='rgba(205,160,90,.55)';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<n;i++){const p=sand[i];p.x-=p.v*k;if(p.x<-20){p.x=width+20;p.y=Math.random()*height}ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+14,p.y+Math.sin(t/300+i)*3)}
+  ctx.stroke();
+}
+function drawTornado(k,playing,sm){
+  if(!tor.on){
+    if(cfg().tornado&&playing&&(tor.wait-=k)<=0)Object.assign(tor,{on:true,x:width+120,y:130+Math.random()*(height-260),ph:Math.random()*6,wait:500+Math.random()*300});
+    return;
+  }
+  tor.x-=2.2*sm*k;tor.y+=Math.sin(t/900+tor.ph)*1.2*k;
+  if(tor.x<-150){tor.on=false;return}
+  const dx=Math.abs(player.x-tor.x);
+  if(playing&&dx<300){
+    player.y+=(tor.y-player.y)*.07*k*(1-dx/300); // zasysanie
+    if(dx<50&&Math.abs(player.y-tor.y)<110){energy-=.9*k;player.y+=(Math.random()-.5)*10}
+  }
+  ctx.save();ctx.lineWidth=3;ctx.fillStyle='rgba(40,45,55,.3)';
+  for(let i=0;i<12;i++){
+    const w=62-i*4,sx=tor.x+Math.sin(t/180+i*.7+tor.ph)*(6+i*.6);
+    ctx.strokeStyle=`rgba(${60+i*6},${68+i*6},${75+i*6},.8)`;
+    ctx.beginPath();ctx.ellipse(sx,tor.y-110+i*20,w,7,0,0,6.28);ctx.fill();ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// --- STEROWANIE ---
+addEventListener('mousemove',e=>setY(e.clientY));
+addEventListener('touchstart',e=>setY(e.touches[0].clientY),{passive:true});
+addEventListener('touchmove',e=>setY(e.touches[0].clientY),{passive:true});
+const keys={};
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code.startsWith('Arrow'))e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=false);
+
+// --- PRZEBIEG GRY ---
+function showOverlay(title,text,btn,color){
+  $('ov-title').textContent=title;$('ov-title').style.color=color;
+  $('ov-text').textContent=text;$('ov-btn').textContent=btn;
+  $('overlay').classList.remove('hidden');
+}
+function announce(){
+  const c=cfg(),b=$('banner');
+  b.innerHTML=`<h2>Poziom ${lvl}: ${c.n}</h2><p>${c.d}</p>`;b.classList.add('show');
+  clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.classList.remove('show'),3500);
+}
+function nextLevel(){lvl++;lvlSuns=0;score+=500;energy=Math.min(100,energy+25);announce()}
+function gameOver(){
+  energy=0;state='over';$('banner').classList.remove('show');
+  showOverlay('Koniec Gry!',`Twój wynik: ${score}. Dotarłeś do poziomu ${lvl}: ${cfg().n}.`,'Zagraj Ponownie','#ff4757');
+}
+function startGame(){
+  score=0;energy=100;lvl=1;lvlSuns=0;flash=0;
+  weatherStep(1);placePlayer();tor.on=false;tor.wait=300;
+  clouds.forEach(c=>c.reset(true));suns.forEach(s=>s.reset());
+  state='play';$('overlay').classList.add('hidden');announce();
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=Math.max(0,Math.min(now-last,50));last=now;t+=dt;const k=dt/16.667;
+  const playing=state==='play',c=cfg(),sm=speedMul();
+
+  weatherStep(Math.min(1,.012*k));
+  const gust=(Math.sin(t/700)+Math.sin(t/1900+1))*.5*W.wind*5;
+  if(keys.ArrowUp||keys.KeyW)setY(player.targetY-12*k);
+  if(keys.ArrowDown||keys.KeyS)setY(player.targetY+12*k);
+  if(playing)energy-=c.drain*(1+.5*W.rain+.6*W.sand)*k;
+
+  // niebo
+  const s=W.sky,sky=ctx.createLinearGradient(0,0,0,height);
+  sky.addColorStop(0,`rgb(${s[0]|0},${s[1]|0},${s[2]|0})`);
+  sky.addColorStop(1,`rgb(${s[3]|0},${s[4]|0},${s[5]|0})`);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
+  drawSky2(k);drawStreaks(k,gust);
+
+  clouds.forEach(cl=>{
+    cl.update(k,sm);cl.draw();
+    if(playing&&cl.isStorm){
+      if(Math.hypot(player.x-cl.x,player.y-cl.y)<cl.width*.3){energy-=.55*k;player.y+=(Math.random()-.5)*10}
+      if(cl.flashing&&!cl.hit&&Math.abs(player.x-cl.x)<25&&player.y>cl.y&&player.y<cl.y+4*cl.step){cl.hit=true;energy-=20;flash=.6}
+    }
+  });
+  if(W.night>.01){ctx.fillStyle=`rgba(0,6,28,${.45*W.night})`;ctx.fillRect(0,0,width,height)}
+  suns.forEach(sun=>{
+    sun.update(k,sm);sun.draw();
+    if(playing&&Math.hypot(player.x-sun.x,player.y-sun.y)<player.size+sun.radius){
+      score+=100*c.bonus;energy=Math.min(100,energy+15);lvlSuns++;sun.reset();
+      if(lvlSuns>=goalOf())nextLevel();
+    }
+  });
+
+  drawTornado(k,playing,sm);
+  drawFog();
+  player.update(k,playing?gust:0);player.draw();
+  drawPrecip(k);drawHazards(k,playing);
+  if(flash>.01){ctx.fillStyle=`rgba(255,255,255,${flash})`;ctx.fillRect(0,0,width,height);flash*=Math.pow(.88,k)}
+
+  if(playing&&energy<=0)gameOver();
+
+  // HUD
+  const e=Math.max(0,Math.round(energy)),cc=cfg(),bar=$('bar').firstElementChild;
+  $('score').textContent=score;$('lvl').textContent=lvl;$('lname').textContent=cc.n;
+  $('goal').textContent=`☀ ${lvlSuns} / ${goalOf()}`;
+  $('energy').textContent=e;bar.style.width=e+'%';bar.style.background=e<30?'#ff4757':'#2ed573';
+  requestAnimationFrame(loop);
+}
+
+showOverlay('Podniebny Patrol','Zbieraj słońca, by doładować energię i awansować na kolejne poziomy. Kieruj samolotem myszką, dotykiem lub strzałkami. Uważaj na burze, deszcz, mgłę, śnieg, wiatr, grad, piasek i trąby powietrzne!','Start','#ffa502');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
