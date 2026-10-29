@@ -410,6 +410,11 @@ function sbDel(id){
  C[SB].components=C[SB].components.filter(c=>c.id!==id);delete cpos[SB][id];delete crot[SB][id];
  [cblown,ccap,ctog,cthyristor].forEach(o=>delete o[SB+id]);wireDraft=null;circuitPaint()}
 const SBP=/[?&]piaskownica/.test(location.search),SBURL=location.href.split(/[?#]/)[0]+'?piaskownica';
+addEventListener('beforeunload',e=>{
+ if(!SBP||ci!==SB&&!mp.on)return;
+ e.preventDefault();
+ e.returnValue='Wyjście z tej strony przy udostępnionym linku do gry wieloosobowej spowoduje przerwanie połączenia.';
+});
 function sbNewTab(){location.assign(SBURL)}
 let sbPrev='';
 const b64e=t=>btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
