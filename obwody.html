@@ -410,9 +410,7 @@ function sbDel(id){
  C[SB].components=C[SB].components.filter(c=>c.id!==id);delete cpos[SB][id];delete crot[SB][id];
  [cblown,ccap,ctog,cthyristor].forEach(o=>delete o[SB+id]);wireDraft=null;circuitPaint()}
 const SBP=/[?&]piaskownica/.test(location.search),SBURL=location.href.split(/[?#]/)[0]+'?piaskownica';
-function sbNewTab(){let w=null;try{w=window.open(SBURL,'_blank')}catch(e){}
- if(w){try{w.opener=null}catch(e){}return}
- const m=$('cmsg');m.textContent='Przeglądarka zablokowała nową kartę. ';const a=document.createElement('a');a.href=SBURL;a.target='_blank';a.rel='noopener';a.textContent='Otwórz piaskownicę';m.append(a)}
+function sbNewTab(){location.assign(SBURL)}
 let sbPrev='';
 const b64e=t=>btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const b64d=t=>new TextDecoder().decode(Uint8Array.from(atob(t.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0)));
