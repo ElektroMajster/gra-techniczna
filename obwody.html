@@ -90,39 +90,28 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .pgl{font-size:11px;color:var(--mu);margin-bottom:3px}
 .pgb{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:4px}
 .tab{padding:6px 16px;color:var(--mu);text-decoration:none;border-right:1px solid var(--ln)}
-.tab.on{background:#fff;color:var(--tx);font-weight:600;border-bottom:2px solid var(--ac)}
-body.sbmode{--bg:#eceff3;--pn:#fff;--ln:#cdd3dc;--tx:#1f2937;--mu:#667085;--ac:#2563eb;--ok:#15803d;--rd:#c0392b;--gr:#eceff3;color-scheme:light;background-image:none;font:13px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;height:100vh;overflow:hidden}
+.tab.on{background:var(--pn);color:var(--tx);font-weight:600;border-bottom:2px solid var(--ac)}
+body.sbmode{height:100vh;overflow:hidden}
 .sbmode main{max-width:none;margin:0;padding:0;height:100vh;display:flex;flex-direction:column}
-.sbmode header{margin:0;padding:6px 12px;background:#fff;border-bottom:1px solid var(--ln);flex-wrap:nowrap}
-.sbmode h1{font-size:18px}
+.sbmode header{margin:0;padding:6px 12px;background:var(--pn);border-bottom:1px solid var(--ln);flex-wrap:nowrap}
+.sbmode h1{font-size:20px}
 .sbmode h1::after{content:"  ·  Piaskownica";color:var(--mu);font-weight:600;animation:none}
-.sbmode .circuit{margin:0;flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:auto auto minmax(0,1fr);padding:0;border:0;border-radius:0;background:var(--bg)}
+.sbmode .circuit{margin:0;flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:auto auto minmax(0,1fr);padding:0;border:0;border-radius:0;background:transparent}
 .sbmode .circuit>h2,.sbmode #ctask,.sbmode #clv,.sbmode #crow,.sbmode .circuit>p,.sbmode #ccheck,.sbmode #chint,.sbmode #cnext{display:none}
-.sbmode #cpal{grid-column:1/3;grid-row:1;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;gap:0;margin:0;background:#fff;border-bottom:1px solid var(--ln)}
-.sbmode #cpal button{padding:3px 8px;font-size:12px;font-family:inherit;white-space:nowrap;background:#f8fafc;color:var(--tx);border:1px solid var(--ln);border-radius:3px}
-.sbmode #cpal button:hover{border-color:var(--ac);background:#eff6ff}
+.sbmode #cpal{grid-column:1/3;grid-row:1;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;gap:0;margin:0;background:var(--pn);border-bottom:1px solid var(--ln)}
+.sbmode #cpal button{padding:3px 8px;font-size:12px;white-space:nowrap}
 .sbmode .pg.act{margin-left:auto;border-right:0;border-left:1px solid var(--ln)}
-.sbmode #ctabs{display:flex;grid-column:1;grid-row:2;background:#e5e8ee;border-bottom:1px solid var(--ln)}
-.sbmode #cwrap{grid-column:1;grid-row:3;overflow:auto;background-color:#fff;background-image:linear-gradient(#e8ebf0 1px,transparent 1px),linear-gradient(90deg,#e8ebf0 1px,transparent 1px);background-size:20px 20px}
-.sbmode #cside{grid-column:2;grid-row:2/4;overflow:auto;display:flex;flex-direction:column;background:#fff;border-left:1px solid var(--ln)}
+.sbmode #ctabs{display:flex;grid-column:1;grid-row:2;background:var(--bg);border-bottom:1px solid var(--ln)}
+.sbmode #cwrap{grid-column:1;grid-row:3;overflow:auto}
+.sbmode #cside{grid-column:2;grid-row:2/4;overflow:auto;display:flex;flex-direction:column;background:var(--pn);border-left:1px solid var(--ln)}
 .sbmode #cside>div{padding:8px 10px;border-bottom:1px solid var(--ln);margin:0}
 .sbmode #ctool{order:1;display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .sbmode #cmp{order:2}.sbmode #cread{order:3}.sbmode #cmsg{order:4}.sbmode #cshare{order:5}
 .sbmode #cmsg:empty{display:none}
-.sbmode #ctool::before,.sbmode #cread::before,.sbmode #cmsg::before{display:block;margin:-8px -10px 8px;padding:5px 10px;background:#f3f4f6;border-bottom:1px solid var(--ln);font-weight:700}
+.sbmode #ctool::before,.sbmode #cread::before,.sbmode #cmsg::before{display:block;margin:-8px -10px 8px;padding:5px 10px;background:var(--bg);border-bottom:1px solid var(--ln);font-weight:700}
 .sbmode #ctool::before{content:"Właściwości"}.sbmode #cread::before{content:"Odczyty"}.sbmode #cmsg::before{content:"Komunikaty"}
 .sbmode #ctool label{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .sbmode #ctool button{width:100%;text-align:left}
-.sbmode .circuit .wire{stroke:#0a8a0a;stroke-width:3}
-.sbmode .circuit .bend{fill:#0a8a0a}
-.sbmode .circuit .part,.sbmode .circuit .sym,.sbmode .circuit .term{stroke:#8b1a1a}
-.sbmode .circuit .part{stroke-width:2.5;fill:#fff}
-.sbmode .circuit .sym{stroke-width:2.5}
-.sbmode .circuit .term{fill:#fff}
-.sbmode .circuit .term:hover,.sbmode .circuit .term.sel{fill:#8b1a1a}
-.sbmode .circuit .motor-letter{fill:#8b1a1a}
-.sbmode .circuit .ct,.sbmode .circuit .cm{fill:#1a1ab0}
-.sbmode .circuit .lab{stroke:#fff}
 @media(max-width:900px){body.sbmode{height:auto;overflow:auto}.sbmode main{height:auto}.sbmode .circuit{display:block}.sbmode #cside{border-left:0}}
 .circuit nav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .circuit svg{display:block;width:100%;min-width:640px;height:auto;touch-action:manipulation}
