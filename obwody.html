@@ -81,6 +81,10 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #cshare[hidden]{display:none}
 #cshare textarea{width:100%;box-sizing:border-box;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:4px;padding:6px}
 #cshare .ctl{margin-top:6px}
+#cmp{margin:8px 0}
+#cmp[hidden]{display:none}
+#cmp input{font:inherit;padding:6px 8px;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:4px}
+#cmp .ctl{margin-top:6px}
 .circuit nav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .circuit svg{display:block;width:100%;min-width:640px;height:auto;touch-action:manipulation}
 .circuit .wire{stroke:var(--ac);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:stroke;cursor:pointer}
@@ -127,7 +131,8 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 <div class="ctl"><label>Losuj poziom <select id="cdiff" aria-label="Trudność losowanego poziomu"><option value="any">dowolny</option><option value="easy">łatwy</option><option value="hard">trudny</option></select></label><button id="crandom">Losuj zadanie</button></div>
 <div id="cpal" hidden></div>
 <div id="cshare" hidden><textarea id="cshtxt" rows="3" spellcheck="false" aria-label="Link lub kod układu" placeholder="Tu pojawi się link do udostępnienia. Aby wczytać cudzy układ, wklej tu link lub kod i kliknij „Wczytaj”."></textarea><div class="ctl"><button data-shcopy="1">Kopiuj</button><button data-shload="1" class="p">Wczytaj</button><button data-shundo="1">Cofnij wczytanie</button></div></div>
-<div id="cboard"></div>
+<div id="cmp" hidden><b>Gra wspólna</b> <span id="cmpst" aria-live="polite">Utwórz pokój albo dołącz kodem (2–4 osoby). Połączenie idzie bezpośrednio między przeglądarkami.</span><div class="ctl"><button data-mphost="1" class="p">Utwórz pokój</button><input id="cmpcode" maxlength="5" size="9" placeholder="kod pokoju" aria-label="Kod pokoju" autocomplete="off"><button data-mpjoin="1">Dołącz</button><button data-mpcopy="1">Kopiuj link zaproszenia</button><button data-mpleave="1">Rozłącz</button></div></div>
+<div id="cwrap" style="position:relative"><div id="cboard"></div><svg id="ccur" viewBox="0 0 700 360" aria-hidden="true" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></svg></div>
 <div id="cmsg" aria-live="polite"></div><div id="cread" class="mu"></div>
 <div class="ctl"><label>Napięcie baterii <select id="cvolt" aria-label="Napięcie baterii"><option value="1.5">1,5 V</option><option value="2">2 V</option><option value="2.2">2,2 V</option><option value="3">3 V</option><option value="3.3">3,3 V</option><option value="4">4 V</option><option value="4.2">4,2 V</option><option value="5">5 V</option><option value="6">6 V</option><option value="9">9 V</option><option value="12">12 V</option></select></label><button id="ccheck" class="p">Sprawdź obwód</button><button id="chint">Podpowiedź</button><button id="cundo">Cofnij przewód</button><button id="cdis">Rozładuj kondensatory</button><label class="mu">światło <input type="range" id="clight" min="0" max="100" value="70"></label><label class="mu"><input type="checkbox" id="csnd"> dźwięk</label><button id="ccancel">Anuluj przewód</button><button id="cclear">Usuń przewody</button><button id="cnext">Następny układ</button></div>
 <p class="mu" style="margin-top:10px">Przeciągnij element, aby go przesunąć. Obróć go, klikając ↻ przy symbolu. Kliknij zacisk początkowy, potem drugi zacisk, aby utworzyć przewód z automatycznymi zakrętami; klikaj wolne punkty, aby poprowadzić własną trasę. Kolorowe LED-y mają różne napięcia przewodzenia. Model napięć jest uproszczony; rzeczywiste LED-y wymagają ograniczenia prądu rezystorem.</p>
@@ -193,7 +198,8 @@ const crot=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,0])));
 const cvolt=C.map(level=>level.voltage||3);
 const SB=C.findIndex(l=>l.sandbox);let sbw=[],sbIn=false,sbLast='';
 try{const j=JSON.parse(localStorage.getItem('obwody_sb'));if(j&&SB>=0&&Array.isArray(j.c)){C[SB].components=j.c;cpos[SB]=j.p||{};crot[SB]=j.r||{};cvolt[SB]=j.v||5;sbw=j.w||[]}}catch(e){}
-const sbSave=()=>{try{const j=JSON.stringify({c:C[SB].components,p:cpos[SB],r:crot[SB],v:cvolt[SB],w:sbw});if(j!==sbLast){sbLast=j;localStorage.setItem('obwody_sb',j)}}catch(e){}};
+let mp={on:0,show:0,conns:{},curs:{},roster:[],last:'',pend:null,timer:0,tc:0,backup:''};
+const sbSave=()=>{if(mp.on)return;try{const j=JSON.stringify({c:C[SB].components,p:cpos[SB],r:crot[SB],v:cvolt[SB],w:sbw});if(j!==sbLast){sbLast=j;localStorage.setItem('obwody_sb',j)}}catch(e){}};
 const circuitNodes=()=>[
  {id:'bp',x:130,y:125,label:'+'},{id:'bn',x:130,y:265,label:'−'},
  ...C[ci].components.flatMap(c=>{
@@ -357,7 +363,7 @@ const PAL=[['Żarówka',{type:'lamp'}],['LED czerwona',{type:'led',color:'#e0313
  ['Dioda',{type:'diode'}],['Dioda Zenera',{type:'zener',vz:5.1}],['Warystor',{type:'varistor',vz:6}],['Kondensator',{type:'capacitor',c:470}],['Kondensator elektrolityczny',{type:'capacitor',c:470,polarized:true}],
  ['Tranzystor NPN',{type:'transistor'}],['Tranzystor PNP',{type:'pnp'}],['MOSFET N',{type:'mosfet'}],['Tyrystor',{type:'thyristor'}],['Przekaźnik',{type:'relay'}],['Amperomierz',{type:'ammeter'}],['Woltomierz',{type:'voltmeter'}]];
 const PFX={lamp:'l',led:'d',diode:'d',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v'};
-$('cpal').innerHTML='<b>Dodaj element:</b> '+PAL.map((p,i)=>`<button data-add="${i}">${p[0]}</button>`).join('')+'<button data-sbclear="1">Wyczyść planszę</button><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button>';
+$('cpal').innerHTML='<b>Dodaj element:</b> '+PAL.map((p,i)=>`<button data-add="${i}">${p[0]}</button>`).join('')+'<button data-sbclear="1">Wyczyść planszę</button><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button>';
 function sbAdd(i){
  const comps=C[SB].components,def=JSON.parse(JSON.stringify(PAL[i][1])),used=new Set(comps.map(c=>c.id));
  let n=1;while(used.has(PFX[def.type]+n))n++;
@@ -409,6 +415,66 @@ function sbImport(txt,noPrev){
 function sbHash(){const m=/#sb=(OB1\.[A-Za-z0-9_-]+)/.exec(location.hash);if(!m)return;
  try{sbImport(m[1]);$('cmsg').textContent='Wczytano udostępniony układ. Poprzedni układ (jeśli był) przywrócisz przyciskiem „Cofnij wczytanie”.';$('cshare').hidden=false}catch(e){$('cmsg').textContent=typeof e==='string'?e:'Nie udało się wczytać udostępnionego układu.'}
  try{history.replaceState(null,'',location.href.split('#')[0])}catch(e){}}
+const MPCOL=['#e03131','#1971c2','#2f9e44','#f08c00'],NS='http://www.w3.org/2000/svg';
+const loadPeer=()=>window.Peer?Promise.resolve():new Promise((ok,no)=>{const e=document.createElement('script');e.src='https://unpkg.com/peerjs@1.5.3/dist/peerjs.min.js';e.onload=ok;e.onerror=()=>no('Nie udało się wczytać biblioteki połączeń (PeerJS). Sprawdź internet.');document.head.appendChild(e)});
+const mpSay=t=>{$('cmpst').textContent=t};
+function mpSend(o,except){const m=JSON.stringify(o);Object.entries(mp.conns).forEach(([k,c])=>{if(k!==except&&c.open)c.send(m)})}
+function mpStatus(){const n=mp.roster.map(r=>r.name).join(', ');mpSay(mp.role==='host'&&mp.roster.length<2?'Pokój '+mp.code+': czekam na graczy. Wyślij im kod lub link zaproszenia.':'Pokój '+mp.code+' ('+mp.roster.length+'/4): '+n)}
+function mpRoster(){mpSend({t:'roster',list:mp.roster});mpStatus()}
+function mpDraw(){const sv=$('ccur');if(!sv)return;while(sv.firstChild)sv.removeChild(sv.firstChild);
+ Object.values(mp.curs).forEach(c=>{const d=document.createElementNS(NS,'circle'),t=document.createElementNS(NS,'text');
+  d.setAttribute('cx',c.x);d.setAttribute('cy',c.y);d.setAttribute('r',6);d.setAttribute('fill',c.color);d.setAttribute('stroke','#fff');d.setAttribute('stroke-width',2);
+  t.setAttribute('x',c.x+10);t.setAttribute('y',c.y+4);t.setAttribute('fill',c.color);t.setAttribute('font-size',13);t.setAttribute('font-weight',700);t.setAttribute('stroke','#fff');t.setAttribute('stroke-width',3);t.setAttribute('paint-order','stroke');t.textContent=c.name;
+  sv.append(d,t)})}
+function sbRemote(code){
+ const st=sbParse(code),old=ci;
+ C[SB].components=st.comps;cpos[SB]=st.pos;crot[SB]=st.rot;cvolt[SB]=st.v;ctog=st.tog;
+ ci=SB;const okn=new Set(circuitNodes().map(n=>n.id));ci=old;
+ sbw=st.w.filter(q=>okn.has(q[0])&&okn.has(q[1])&&q[0]!==q[1]).map(q=>({from:q[0],to:q[1],points:q[2]}));
+ if(old===SB){cw=sbw;if(wireDraft&&!okn.has(wireDraft.from))wireDraft=null}
+ circuitPaint()}
+function mpApply(code){if(cdrag){mp.pend=code;return}try{sbRemote(code)}catch(e){}if(mp.backup){sbPrev=mp.backup;mp.backup=''}}
+function mpDirty(){if(mp.timer)return;mp.timer=setTimeout(()=>{mp.timer=0;if(!mp.on)return;const c=sbCode();if(c===mp.last)return;mp.last=c;
+ if(mp.role==='host')mpSend({t:'state',code:c});else if(mp.conns.host&&mp.conns.host.open)mp.conns.host.send(JSON.stringify({t:'state',code:c}))},90)}
+function mpRecv(d,from){
+ let o;try{o=JSON.parse(d)}catch(e){return}if(!o||typeof o.t!=='string')return;
+ if(o.t==='state'){if(typeof o.code!=='string'||o.code.length>30000)return;mp.last=o.code;mpApply(o.code);if(mp.role==='host')mpSend({t:'state',code:o.code})}
+ else if(o.t==='cur'){const x=Math.min(700,Math.max(0,+o.x)),y=Math.min(360,Math.max(0,+o.y));if(!Number.isFinite(x)||!Number.isFinite(y))return;
+  if(mp.role==='host'){const r=mp.roster.find(q=>q.id===from);if(!r)return;mp.curs[from]={x,y,name:r.name,color:r.color};mpSend({t:'cur',id:from,x,y},from);mpDraw()}
+  else if(typeof o.id==='string'){const r=mp.roster.find(q=>q.id===o.id);if(r){mp.curs[o.id]={x,y,name:r.name,color:r.color};mpDraw()}}}
+ else if(o.t==='roster'&&mp.role==='guest'&&Array.isArray(o.list)){mp.roster=o.list.slice(0,4).filter(r=>r&&typeof r.id==='string'&&typeof r.name==='string'&&/^#[0-9a-f]{6}$/.test(r.color)).map(r=>({id:r.id.slice(0,40),name:r.name.slice(0,20),color:r.color}));mpStatus()}
+ else if(o.t==='full')mpLeave('Pokój jest pełny (maksymalnie 4 osoby).')}
+function mpLeave(msg){const p=mp.peer;mp.peer=null;if(p)try{p.destroy()}catch(e){}
+ mp.on=0;mp.conns={};mp.curs={};mp.roster=[];mp.code='';mp.role='';mp.pend=null;if(msg)mpSay(msg);mpDraw();$('cmp').hidden=ci!==SB||!mp.show}
+function mpHost(){
+ mpLeave();mpSay('Łączenie…');
+ loadPeer().then(()=>{
+  const code=Array.from({length:5},()=>'abcdefghjkmnpqrstuvwxyz23456789'[Math.random()*31|0]).join(''),p=new Peer('ob-'+code);
+  mp.peer=p;mp.role='host';
+  p.on('open',()=>{mp.on=1;mp.code=code;mp.last=sbCode();mp.roster=[{id:'host',name:'Gospodarz',color:MPCOL[0]}];$('cmpcode').value=code;mpStatus()});
+  p.on('error',e=>{mpSay(e.type==='unavailable-id'?'Ten kod jest zajęty, spróbuj ponownie.':'Błąd połączenia: '+e.type);mpLeave()});
+  p.on('connection',c=>{
+   if(mp.roster.length>=4){c.on('open',()=>{c.send(JSON.stringify({t:'full'}));setTimeout(()=>c.close(),300)});return}
+   c.on('open',()=>{const col=MPCOL.find(x=>!mp.roster.some(r=>r.color===x))||MPCOL[3];
+    mp.conns[c.peer]=c;mp.roster.push({id:c.peer,name:'Gość '+(mp.roster.length),color:col});
+    c.send(JSON.stringify({t:'state',code:sbCode()}));mpRoster()});
+   c.on('data',d=>mpRecv(d,c.peer));
+   c.on('close',()=>{delete mp.conns[c.peer];mp.roster=mp.roster.filter(r=>r.id!==c.peer);delete mp.curs[c.peer];mpRoster();mpDraw()})})
+ }).catch(e=>mpSay(String(e)))}
+function mpJoin(code){
+ if(!/^[a-z0-9]{5}$/.test(code)){mpSay('Wpisz pięcioznakowy kod pokoju.');return}
+ mpLeave();mpSay('Łączenie…');
+ loadPeer().then(()=>{
+  mp.backup=C[SB].components.length?sbCode():'';
+  const p=new Peer();mp.peer=p;mp.role='guest';
+  p.on('error',e=>{mpSay(e.type==='peer-unavailable'?'Nie ma takiego pokoju.':'Błąd połączenia: '+e.type);mpLeave()});
+  p.on('open',()=>{const c=p.connect('ob-'+code,{reliable:true});mp.conns.host=c;
+   c.on('open',()=>{mp.on=1;mp.code=code;mpSay('Połączono z pokojem '+code+'.')});
+   c.on('data',d=>mpRecv(d,'host'));
+   c.on('close',()=>mpLeave('Gospodarz zakończył grę wspólną.'))})
+ }).catch(e=>mpSay(String(e)))}
+function roomHash(){const m=/#room=([a-z0-9]{5})(?![a-z0-9])/.exec(location.hash);if(!m)return;
+ ci=SB;mp.show=1;circuitPaint();$('cmpcode').value=m[1];mpJoin(m[1]);try{history.replaceState(null,'',location.href.split('#')[0])}catch(e){}}
 function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n])),S=sim(false);
  $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
@@ -507,7 +573,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  svg+='</svg>';
  $('cboard').innerHTML=svg;
  $('cread').innerHTML=cw.length||C[ci].free?`Prąd z baterii: <b>${(S.ib*1000).toFixed(0)} mA</b>${[...new Set(S.bad)].map(x=>' <span class="warn">⚠ '+x+'</span>').join('')}`:'Narysuj przewody, a zobaczysz prąd i zachowanie elementów na żywo.';
- buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;if(ci===SB){sbw=cw;sbSave()}
+ buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;$('cmp').hidden=ci!==SB||!(mp.show||mp.on);if(ci===SB){sbw=cw;sbSave()}if(mp.on)mpDirty();
  $('ccancel').disabled=!wireDraft;
  $('cnext').disabled=ci===C.length-1;
 }
@@ -598,7 +664,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
@@ -619,6 +685,12 @@ document.addEventListener('click',e=>{
  if(t.dataset.shcopy){const v=$('cshtxt').value;if(v){try{navigator.clipboard.writeText(v).then(()=>{$('cmsg').textContent='Skopiowano.'},()=>$('cshtxt').select())}catch(e){$('cshtxt').select()}}return}
  if(t.dataset.shload){try{sbImport($('cshtxt').value);$('cmsg').textContent='Wczytano układ. Poprzedni przywrócisz przyciskiem „Cofnij wczytanie”.'}catch(err){$('cmsg').textContent=typeof err==='string'?err:'Nie udało się wczytać układu.'}return}
  if(t.dataset.shundo){if(!sbPrev){$('cmsg').textContent='Nie ma czego cofać.';return}try{sbImport(sbPrev,true);$('cmsg').textContent='Przywrócono poprzedni układ.'}catch(err){$('cmsg').textContent='Nie udało się przywrócić układu.'}return}
+
+ if(t.dataset.mpopen){mp.show=!mp.show;$('cmp').hidden=!(mp.show||mp.on);return}
+ if(t.dataset.mphost){mpHost();return}
+ if(t.dataset.mpjoin){mpJoin($('cmpcode').value.trim().toLowerCase());return}
+ if(t.dataset.mpleave){mpLeave('Rozłączono.');return}
+ if(t.dataset.mpcopy){if(!mp.code){mpSay('Najpierw utwórz pokój.');return}const u=location.href.split('#')[0]+'#room='+mp.code;try{navigator.clipboard.writeText(u).then(()=>mpSay('Link zaproszenia skopiowano: '+u),()=>mpSay('Link zaproszenia: '+u))}catch(e){mpSay('Link zaproszenia: '+u)}return}
  if(t.dataset.add!==undefined){sbAdd(+t.dataset.add);return}
  if(t.dataset.del){sbDel(t.dataset.del);return}
  if(t.dataset.sbclear){C[SB].components=[];cpos[SB]={};crot[SB]={};cw=[];wireDraft=null;cblown={};ccap={};ctog={};cthyristor={};$('cmsg').textContent='';circuitPaint();return}
@@ -652,7 +724,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
@@ -668,4 +740,9 @@ document.addEventListener('input',e=>{if(e.target.id==='clight')circuitPaint()})
 setInterval(()=>{if(cpd||!cw.length||!C[ci].components.some(c=>c.type==='capacitor'))return;const S=sim(false);let ch=0;
  C[ci].components.forEach(c=>{if(c.type==='capacitor'){const v=S.cs[c.id]||0,o=ccap[ci+c.id]||0;if(Math.abs(v-o)>2e-4)ch=1;ccap[ci+c.id]=v}});if(ch)circuitPaint()},60);
 sbHash();addEventListener('hashchange',sbHash);
+roomHash();addEventListener('hashchange',roomHash);
+document.addEventListener('pointerup',()=>setTimeout(()=>{if(mp.pend&&!cdrag){const c=mp.pend;mp.pend=null;mp.last=c;try{sbRemote(c)}catch(e){}}},0));
+$('cboard').addEventListener('pointermove',e=>{if(!mp.on)return;const now=Date.now();if(now-mp.tc<60)return;mp.tc=now;
+ const sv=$('cboard').querySelector('svg');if(!sv)return;const r=sv.getBoundingClientRect(),x=Math.round((e.clientX-r.left)/r.width*700),y=Math.round((e.clientY-r.top)/r.height*360);
+ if(mp.role==='host')mpSend({t:'cur',id:'host',x,y});else if(mp.conns.host&&mp.conns.host.open)mp.conns.host.send(JSON.stringify({t:'cur',x,y}))});
 circuitPaint();</script></body></html>
