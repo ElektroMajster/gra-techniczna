@@ -74,6 +74,13 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .t.hl{fill:var(--ac);font-weight:700}
 .t.big{font-size:28px;font-weight:700}
 .circuit{margin:12px 0}
+#cpal{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+#cpal[hidden]{display:none}
+#cpal button{padding:4px 9px;font-size:13px}
+#cshare{margin:8px 0}
+#cshare[hidden]{display:none}
+#cshare textarea{width:100%;box-sizing:border-box;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:4px;padding:6px}
+#cshare .ctl{margin-top:6px}
 .circuit nav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .circuit svg{display:block;width:100%;min-width:640px;height:auto;touch-action:manipulation}
 .circuit .wire{stroke:var(--ac);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:stroke;cursor:pointer}
@@ -118,6 +125,8 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 <p id="ctask"></p>
 <nav id="clv" aria-label="Układy elektryczne"></nav>
 <div class="ctl"><label>Losuj poziom <select id="cdiff" aria-label="Trudność losowanego poziomu"><option value="any">dowolny</option><option value="easy">łatwy</option><option value="hard">trudny</option></select></label><button id="crandom">Losuj zadanie</button></div>
+<div id="cpal" hidden></div>
+<div id="cshare" hidden><textarea id="cshtxt" rows="3" spellcheck="false" aria-label="Link lub kod układu" placeholder="Tu pojawi się link do udostępnienia. Aby wczytać cudzy układ, wklej tu link lub kod i kliknij „Wczytaj”."></textarea><div class="ctl"><button data-shcopy="1">Kopiuj</button><button data-shload="1" class="p">Wczytaj</button><button data-shundo="1">Cofnij wczytanie</button></div></div>
 <div id="cboard"></div>
 <div id="cmsg" aria-live="polite"></div><div id="cread" class="mu"></div>
 <div class="ctl"><label>Napięcie baterii <select id="cvolt" aria-label="Napięcie baterii"><option value="1.5">1,5 V</option><option value="2">2 V</option><option value="2.2">2,2 V</option><option value="3">3 V</option><option value="3.3">3,3 V</option><option value="4">4 V</option><option value="4.2">4,2 V</option><option value="5">5 V</option><option value="6">6 V</option><option value="9">9 V</option><option value="12">12 V</option></select></label><button id="ccheck" class="p">Sprawdź obwód</button><button id="chint">Podpowiedź</button><button id="cundo">Cofnij przewód</button><button id="cdis">Rozładuj kondensatory</button><label class="mu">światło <input type="range" id="clight" min="0" max="100" value="70"></label><label class="mu"><input type="checkbox" id="csnd"> dźwięk</label><button id="ccancel">Anuluj przewód</button><button id="cclear">Usuń przewody</button><button id="cnext">Następny układ</button></div>
@@ -175,12 +184,16 @@ const C=[
  {name:'Przekaźnik NPN',difficulty:'hard',voltage:5,task:'Steruj przekaźnikiem tranzystorem NPN. Przełącznik podaje sygnał przez opornik na bazę, emiter łączy się z minusem, a cewka przekaźnika jest między plusem i kolektorem. Styki przekaźnika włączają silnik.',components:[{id:'q1',type:'transistor',x:550,y:185},{id:'t1',type:'toggle',x:270,y:95},{id:'r1',type:'resistor',r:1000,x:410,y:95},{id:'k1',type:'relay',x:350,y:210},{id:'m1',type:'motor',x:550,y:285}],requiredWires:[['bp','t1a'],['t1b','r1a'],['r1b','q1b'],['q1e','bn'],['bp','k1a'],['k1b','q1c'],['bp','k1c'],['k1d','m1a'],['m1b','bn']],ok:(S,Z,D,B,Q)=>Q({t1:1}).on.k1&&Q({t1:1}).on.m1&&!Q({t1:0}).on.k1&&!Q({t1:0}).on.m1},
  {name:'Klucz PNP silnika',difficulty:'hard',voltage:5,task:'Zbuduj klucz PNP po stronie plusa dla silnika. Emiter łączy się z plusem, kolektor z silnikiem, a drugi koniec silnika z minusem. Opornik podciąga bazę do plusa, a przycisk przez drugi opornik ściąga ją do minusa: silnik ma działać tylko po naciśnięciu.',components:[{id:'q1',type:'pnp',x:530,y:185},{id:'r1',type:'resistor',r:10000,x:330,y:95},{id:'r2',type:'resistor',r:1000,x:410,y:270},{id:'b1',type:'button',x:470,y:95},{id:'m1',type:'motor',x:300,y:270}],voltage:5,requiredWires:[['bp','q1e'],['q1c','m1a'],['m1b','bn'],['bp','r1a'],['r1b','q1b'],['q1b','r2a'],['r2b','b1a'],['b1b','bn']],ok:(S,Z)=>S.on.m1&&!Z.on.m1},
  {name:'Ochrona warystorem',difficulty:'hard',voltage:12,task:'Warystor ogranicza przepięcia. Połącz baterię 12 V przez opornik 10 Ω z żarówką, a warystor 6 V równolegle do żarówki. Woltomierz podłącz równolegle do warystora. Warystor powinien ograniczyć napięcie na odbiorniku.',components:[{id:'r1',type:'resistor',r:10,x:290,y:185},{id:'l1',type:'lamp',x:470,y:115},{id:'v1',type:'varistor',vz:6,x:470,y:255},{id:'m1',type:'voltmeter',x:600,y:185}],requiredWires:[['bp','r1a'],['r1b','l1a'],['r1b','v1a'],['l1b','bn'],['v1b','bn'],['l1a','m1a'],['l1b','m1b']],ok:S=>S.v.v1>4.5&&S.v.v1<7},
- {name:'Zatrzask tyrystorowy',difficulty:'hard',voltage:5,task:'Zbuduj zatrzask na tyrystorze SCR. Połącz anodę szeregowo z żarówką do plusa, katodę z minusem. Bramkę wyzwól przyciskiem i dwoma opornikami z plusa. Po krótkim naciśnięciu żarówka ma pozostać zapalona po puszczeniu przycisku; usuń przewody, aby wyzerować układ.',components:[{id:'q1',type:'thyristor',x:520,y:185},{id:'l1',type:'lamp',x:310,y:110},{id:'r1',type:'resistor',r:1000,x:300,y:265},{id:'b1',type:'button',x:430,y:95},{id:'r2',type:'resistor',r:1000,x:470,y:270}],requiredWires:[['bp','l1a'],['l1b','q1a'],['q1k','bn'],['bp','r1a'],['r1b','b1a'],['b1b','r2a'],['r2b','q1g']],ok:(S,Z)=>S.lit.l1&&!Z.lit.l1}
+ {name:'Zatrzask tyrystorowy',difficulty:'hard',voltage:5,task:'Zbuduj zatrzask na tyrystorze SCR. Połącz anodę szeregowo z żarówką do plusa, katodę z minusem. Bramkę wyzwól przyciskiem i dwoma opornikami z plusa. Po krótkim naciśnięciu żarówka ma pozostać zapalona po puszczeniu przycisku; usuń przewody, aby wyzerować układ.',components:[{id:'q1',type:'thyristor',x:520,y:185},{id:'l1',type:'lamp',x:310,y:110},{id:'r1',type:'resistor',r:1000,x:300,y:265},{id:'b1',type:'button',x:430,y:95},{id:'r2',type:'resistor',r:1000,x:470,y:270}],requiredWires:[['bp','l1a'],['l1b','q1a'],['q1k','bn'],['bp','r1a'],['r1b','b1a'],['b1b','r2a'],['r2b','q1g']],ok:(S,Z)=>S.lit.l1&&!Z.lit.l1},
+ {name:'Piaskownica',difficulty:'easy',free:true,sandbox:true,voltage:5,task:'Piaskownica: buduj własne układy. Dodawaj dowolne elementy z palety nad planszą (przycisk ✕ przy elemencie go usuwa, ↻ obraca), łącz je przewodami i obserwuj symulację na żywo. Zmieniaj napięcie baterii, klikaj oporniki i potencjometry, steruj światłem. Plansza zapisuje się w przeglądarce.',components:[]}
 ];
 let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false);
 const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,y:c.y}])));
 const crot=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,0])));
 const cvolt=C.map(level=>level.voltage||3);
+const SB=C.findIndex(l=>l.sandbox);let sbw=[],sbIn=false,sbLast='';
+try{const j=JSON.parse(localStorage.getItem('obwody_sb'));if(j&&SB>=0&&Array.isArray(j.c)){C[SB].components=j.c;cpos[SB]=j.p||{};crot[SB]=j.r||{};cvolt[SB]=j.v||5;sbw=j.w||[]}}catch(e){}
+const sbSave=()=>{try{const j=JSON.stringify({c:C[SB].components,p:cpos[SB],r:crot[SB],v:cvolt[SB],w:sbw});if(j!==sbLast){sbLast=j;localStorage.setItem('obwody_sb',j)}}catch(e){}};
 const circuitNodes=()=>[
  {id:'bp',x:130,y:125,label:'+'},{id:'bn',x:130,y:265,label:'−'},
  ...C[ci].components.flatMap(c=>{
@@ -338,7 +351,65 @@ function chint(){const lv=C[ci],sol=lv.sol||lv.requiredWires;
  const nm=id=>{if(id==='bp')return'plus baterii';if(id==='bn')return'minus baterii';const t=lv.components.find(c=>c.id===id.slice(0,-1)).type,p=id.slice(-1);return'zacisk '+LB[t]+(t==='led'||t==='diode'||t==='zener'?(p==='a'?' (A)':' (K)'):['transistor','pnp','mosfet','thyristor'].includes(t)?' ('+p.toUpperCase()+')':'')};
  hintSet=new Set(m);$('cmsg').textContent=`Podpowiedź: połącz ${nm(m[0])} z ${nm(m[1])}. Zaciski są podświetlone.`;circuitPaint();
 }
-function circuitPaint(){
+const PAL=[['Żarówka',{type:'lamp'}],['LED czerwona',{type:'led',color:'#e03131',colorName:'czerwona',vf:1.8}],['LED zielona',{type:'led',color:'#2f9e44',colorName:'zielona',vf:2.2}],['LED niebieska',{type:'led',color:'#1971c2',colorName:'niebieska',vf:3}],['LED biała',{type:'led',color:'#f1f3f5',colorName:'biała',vf:3.2}],
+ ['Opornik',{type:'resistor',r:220,rs:[10,22,47,100,220,330,470,680,1000,4700]}],['Potencjometr',{type:'pot',r:1000}],['Fotorezystor',{type:'ldr'}],['Silnik',{type:'motor'}],['Brzęczyk',{type:'buzzer'}],
+ ['Wyłącznik',{type:'switch'}],['Przełącznik',{type:'toggle'}],['Przycisk',{type:'button'}],['Bezpiecznik',{type:'fuse',rating:.5}],
+ ['Dioda',{type:'diode'}],['Dioda Zenera',{type:'zener',vz:5.1}],['Warystor',{type:'varistor',vz:6}],['Kondensator',{type:'capacitor',c:470}],['Kondensator elektrolityczny',{type:'capacitor',c:470,polarized:true}],
+ ['Tranzystor NPN',{type:'transistor'}],['Tranzystor PNP',{type:'pnp'}],['MOSFET N',{type:'mosfet'}],['Tyrystor',{type:'thyristor'}],['Przekaźnik',{type:'relay'}],['Amperomierz',{type:'ammeter'}],['Woltomierz',{type:'voltmeter'}]];
+const PFX={lamp:'l',led:'d',diode:'d',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v'};
+$('cpal').innerHTML='<b>Dodaj element:</b> '+PAL.map((p,i)=>`<button data-add="${i}">${p[0]}</button>`).join('')+'<button data-sbclear="1">Wyczyść planszę</button><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button>';
+function sbAdd(i){
+ const comps=C[SB].components,def=JSON.parse(JSON.stringify(PAL[i][1])),used=new Set(comps.map(c=>c.id));
+ let n=1;while(used.has(PFX[def.type]+n))n++;
+ const id=PFX[def.type]+n,slots=[];
+ [95,185,275].forEach(y=>[250,370,490,610].forEach(x=>slots.push({x,y})));[140,230].forEach(y=>[310,430,550].forEach(x=>slots.push({x,y})));
+ const pos=slots.find(q=>!comps.some(c=>{const p=cpos[SB][c.id];return Math.abs(p.x-q.x)<100&&Math.abs(p.y-q.y)<65}));
+ if(!pos){$('cmsg').textContent='Brak miejsca na planszy. Usuń któryś element przyciskiem ✕ albo przeciągnij elementy bliżej siebie.';return}
+ comps.push({id,...def,x:pos.x,y:pos.y});cpos[SB][id]={...pos};crot[SB][id]=0;$('cmsg').textContent='';circuitPaint()}
+function sbDel(id){
+ const ts=new Set(circuitNodes().filter(n=>n.component===id).map(n=>n.id));
+ cw=cw.filter(w=>!ts.has(w.from)&&!ts.has(w.to));
+ C[SB].components=C[SB].components.filter(c=>c.id!==id);delete cpos[SB][id];delete crot[SB][id];
+ [cblown,ccap,ctog,cthyristor].forEach(o=>delete o[SB+id]);wireDraft=null;circuitPaint()}
+let sbPrev='';
+const b64e=t=>btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const b64d=t=>new TextDecoder().decode(Uint8Array.from(atob(t.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0)));
+const LEDV={'#e03131':0,'#2f9e44':1,'#1971c2':2,'#f1f3f5':3};
+function sbCode(){
+ const comps=C[SB].components.map(c=>{const p=cpos[SB][c.id],o={i:c.id,t:c.type,x:p.x,y:p.y,a:crot[SB][c.id]||0};
+  if(c.r!==undefined&&c.rs)o.r=c.r;if(c.pos!==undefined)o.pos=c.pos;if(c.polarized)o.p=1;if(c.type==='led')o.l=LEDV[c.color]??0;if(ctog[SB+c.id])o.on=1;return o});
+ const w=(ci===SB?cw:sbw).map(q=>[q.from,q.to,(q.points||[]).map(p=>[Math.round(p.x),Math.round(p.y)])]);
+ return 'OB1.'+b64e(JSON.stringify({v:cvolt[SB],c:comps,w}))}
+function sbParse(txt){
+ const m=/OB1\.([A-Za-z0-9_-]+)/.exec(txt||'');if(!m)throw 'To nie wygląda na kod układu.';
+ let j;try{j=JSON.parse(b64d(m[1]))}catch(e){throw 'Kod układu jest uszkodzony.'}
+ if(!j||!Array.isArray(j.c)||!Array.isArray(j.w)||j.c.length>40||j.w.length>150)throw 'Kod układu ma nieprawidłową zawartość.';
+ const num=(v,a,b,d)=>{v=+v;return Number.isFinite(v)?Math.min(b,Math.max(a,v)):d};
+ const types=new Set(PAL.map(p=>p[1].type)),leds=PAL.filter(p=>p[1].type==='led').map(p=>p[1]);
+ const comps=[],pos={},rot={},tog={},ids=new Set();
+ for(const o of j.c){
+  if(!o||!types.has(o.t)||!/^[a-z]{1,2}\d{1,3}$/.test(o.i)||ids.has(o.i))throw 'W kodzie jest nieznany element.';
+  ids.add(o.i);
+  const base=o.t==='led'?leds[Math.round(num(o.l,0,leds.length-1,0))]:(PAL.find(p=>p[1].type===o.t&&!!p[1].polarized===!!o.p)||PAL.find(p=>p[1].type===o.t))[1];
+  const c={...JSON.parse(JSON.stringify(base)),id:o.i,x:num(o.x,210,660,300),y:num(o.y,75,295,185)};
+  if(c.rs&&c.rs.includes(+o.r))c.r=+o.r;
+  if(c.type==='pot'&&[10,25,50,75,90].includes(+o.pos))c.pos=+o.pos;
+  comps.push(c);pos[c.id]={x:c.x,y:c.y};rot[c.id]=[0,90,180,270].includes(+o.a)?+o.a:0;if(o.on)tog[SB+c.id]=true}
+ const V=[1.5,2,2.2,3,3.3,4,4.2,5,6,9,12],v=V.reduce((a,b)=>Math.abs(b-num(j.v,1,24,5))<Math.abs(a-num(j.v,1,24,5))?b:a);
+ const w=j.w.filter(q=>Array.isArray(q)&&typeof q[0]==='string'&&typeof q[1]==='string'&&q[0].length<9&&q[1].length<9).map(q=>[q[0],q[1],(Array.isArray(q[2])?q[2]:[]).filter(Array.isArray).slice(0,12).map(p=>({x:num(p[0],0,700,0),y:num(p[1],0,360,0)}))]);
+ return{comps,pos,rot,tog,v,w}}
+function sbImport(txt,noPrev){
+ const st=sbParse(txt);
+ if(!noPrev&&C[SB].components.length)sbPrev=sbCode();
+ C[SB].components=st.comps;cpos[SB]=st.pos;crot[SB]=st.rot;cvolt[SB]=st.v;
+ cblown={};ccap={};cthyristor={};ctog=st.tog;
+ ci=SB;const okn=new Set(circuitNodes().map(n=>n.id));
+ sbw=st.w.filter(q=>okn.has(q[0])&&okn.has(q[1])&&q[0]!==q[1]).map(q=>({from:q[0],to:q[1],points:q[2]}));
+ cw=[];wireDraft=null;sbIn=false;circuitPaint()}
+function sbHash(){const m=/#sb=(OB1\.[A-Za-z0-9_-]+)/.exec(location.hash);if(!m)return;
+ try{sbImport(m[1]);$('cmsg').textContent='Wczytano udostępniony układ. Poprzedni układ (jeśli był) przywrócisz przyciskiem „Cofnij wczytanie”.';$('cshare').hidden=false}catch(e){$('cmsg').textContent=typeof e==='string'?e:'Nie udało się wczytać udostępnionego układu.'}
+ try{history.replaceState(null,'',location.href.split('#')[0])}catch(e){}}
+function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n])),S=sim(false);
  $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
  $('ctask').textContent=`Układ ${ci+1}: ${C[ci].task}`;
@@ -401,6 +472,7 @@ function circuitPaint(){
   if(type==='switch')svg+=`<text x="${x}" y="${y+42}" class="cm" text-anchor="middle">${cclosed?'zamknięty':'otwarty'} – kliknij</text>`;
   svg+='</g>';
   svg+=`<g data-rotate="${id}" tabindex="0" role="button" aria-label="Obróć: ${label}"><circle cx="${x+34}" cy="${y-28}" r="12" class="rotate-part"/><text x="${x+34}" y="${y-23}" text-anchor="middle" class="rotate-label">↻</text></g>`;
+  if(C[ci].sandbox)svg+=`<g data-del="${id}" tabindex="0" role="button" aria-label="Usuń: ${label}"><circle cx="${x-34}" cy="${y-28}" r="12" class="rotate-part"/><text x="${x-34}" y="${y-23}" text-anchor="middle" class="rotate-label">✕</text></g>`;
   svg+='</g>';
   {const ln=[];svg=svg.slice(0,start)+svg.slice(start).replace(/<text x="-?[\d.]+" y="(-?[\d.]+)" class="(ct|cm|voltage|wt)" text-anchor="middle">([\s\S]*?)<\/text>/g,(m,yy,cls,t)=>{const dy=+yy-y;if(Math.abs(dy)<28)return m;ln.push({dy,cls,t});return''});if(ln.length)blocks.push({id,x,y,ln:ln.sort((p,q)=>p.dy-q.dy)})}
  }
@@ -435,7 +507,7 @@ function circuitPaint(){
  svg+='</svg>';
  $('cboard').innerHTML=svg;
  $('cread').innerHTML=cw.length||C[ci].free?`Prąd z baterii: <b>${(S.ib*1000).toFixed(0)} mA</b>${[...new Set(S.bad)].map(x=>' <span class="warn">⚠ '+x+'</span>').join('')}`:'Narysuj przewody, a zobaczysz prąd i zachowanie elementów na żywo.';
- buzz(S.snd);
+ buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;if(ci===SB){sbw=cw;sbSave()}
  $('ccancel').disabled=!wireDraft;
  $('cnext').disabled=ci===C.length-1;
 }
@@ -492,7 +564,7 @@ function circuitPoint(event,svg){
 }
 document.addEventListener('pointerdown',e=>{
  if(e.button!==0)return;
- if(e.target.closest('[data-rotate]'))return;
+ if(e.target.closest('[data-rotate],[data-del]'))return;
  const target=e.target.closest('[data-drag]');
  if(!target)return;
  const svg=target.ownerSVGElement,point=circuitPoint(e,svg),id=target.dataset.drag,origin=cpos[ci][id];
@@ -526,11 +598,11 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
-  const difficulty=$('cdiff').value,available=C.map((level,index)=>({level,index})).filter(x=>difficulty==='any'||x.level.difficulty===difficulty);
+  const difficulty=$('cdiff').value,available=C.map((level,index)=>({level,index})).filter(x=>!x.level.sandbox&&(difficulty==='any'||x.level.difficulty===difficulty));
   const choices=available.filter(x=>x.index!==ci),pool=choices.length?choices:available,choice=pool[Math.floor(Math.random()*pool.length)];
   ci=choice.index;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return;
  }
@@ -541,6 +613,15 @@ document.addEventListener('click',e=>{
  if(t.dataset.res){const c=C[ci].components.find(x=>x.id===t.dataset.res),k=c.rs.indexOf(c.r||100);c.r=c.rs[(k+1)%c.rs.length];$('cmsg').textContent='';circuitPaint();return}
  if(t.dataset.fix){delete cblown[ci+t.dataset.fix];circuitPaint();return}
  if(t.id==='chint'){chint();return}
+
+ if(t.dataset.shshare){const url=location.href.split('#')[0]+'#sb='+sbCode();$('cshare').hidden=false;$('cshtxt').value=url;$('cshtxt').select();$('cmsg').textContent='Link wygenerowano. Skopiuj go z pola poniżej i wyślij znajomemu.';try{navigator.clipboard.writeText(url).then(()=>{$('cmsg').textContent='Link skopiowano do schowka. Wyślij go znajomemu.'},()=>{})}catch(e){}return}
+ if(t.dataset.shopen){$('cshare').hidden=false;$('cshtxt').value='';$('cshtxt').focus();$('cmsg').textContent='Wklej link lub kod układu i kliknij „Wczytaj”.';return}
+ if(t.dataset.shcopy){const v=$('cshtxt').value;if(v){try{navigator.clipboard.writeText(v).then(()=>{$('cmsg').textContent='Skopiowano.'},()=>$('cshtxt').select())}catch(e){$('cshtxt').select()}}return}
+ if(t.dataset.shload){try{sbImport($('cshtxt').value);$('cmsg').textContent='Wczytano układ. Poprzedni przywrócisz przyciskiem „Cofnij wczytanie”.'}catch(err){$('cmsg').textContent=typeof err==='string'?err:'Nie udało się wczytać układu.'}return}
+ if(t.dataset.shundo){if(!sbPrev){$('cmsg').textContent='Nie ma czego cofać.';return}try{sbImport(sbPrev,true);$('cmsg').textContent='Przywrócono poprzedni układ.'}catch(err){$('cmsg').textContent='Nie udało się przywrócić układu.'}return}
+ if(t.dataset.add!==undefined){sbAdd(+t.dataset.add);return}
+ if(t.dataset.del){sbDel(t.dataset.del);return}
+ if(t.dataset.sbclear){C[SB].components=[];cpos[SB]={};crot[SB]={};cw=[];wireDraft=null;cblown={};ccap={};ctog={};cthyristor={};$('cmsg').textContent='';circuitPaint();return}
  if(t.dataset.rotate){
   const id=t.dataset.rotate;crot[ci][id]=(crot[ci][id]+90)%360;
   $('cmsg').textContent='';circuitPaint();return;
@@ -571,7 +652,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
@@ -586,4 +667,5 @@ document.addEventListener('pointerdown',()=>{cpd=true},true);
 document.addEventListener('input',e=>{if(e.target.id==='clight')circuitPaint()});
 setInterval(()=>{if(cpd||!cw.length||!C[ci].components.some(c=>c.type==='capacitor'))return;const S=sim(false);let ch=0;
  C[ci].components.forEach(c=>{if(c.type==='capacitor'){const v=S.cs[c.id]||0,o=ccap[ci+c.id]||0;if(Math.abs(v-o)>2e-4)ch=1;ccap[ci+c.id]=v}});if(ch)circuitPaint()},60);
+sbHash();addEventListener('hashchange',sbHash);
 circuitPaint();</script></body></html>
