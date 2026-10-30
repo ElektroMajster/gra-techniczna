@@ -101,6 +101,11 @@ body.sbmode{height:100vh;overflow:hidden}
 .sbmode #cwrap{grid-column:1;grid-row:3;overflow:auto}
 .sbmode #cside{grid-column:2;grid-row:2/4;overflow:auto;display:flex;flex-direction:column;background:var(--pn);border-left:1px solid var(--ln)}
 .sbmode #cside>div{padding:8px 10px;border-bottom:1px solid var(--ln);margin:0}
+.sbmode #cselection{display:flex;flex-direction:column;gap:6px}
+.sbmode #cselection[hidden]{display:none}
+.sbmode #cselection .selection-actions{display:flex;gap:6px}
+.sbmode #cselection button{flex:1}
+.sbmode #cselection-name{font-weight:700}
 .sbmode #ctool{order:1;display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .sbmode #cmp{order:2}.sbmode #cread{order:3}.sbmode #cmsg{order:4}.sbmode #cshare{order:5}
 .sbmode #cmsg:empty{display:none}
@@ -131,6 +136,7 @@ body.sbmode{height:100vh;overflow:hidden}
 .circuit .drag-part{cursor:grab;touch-action:none}
 .circuit .drag-part:active{cursor:grabbing}
 .circuit .drag-hit{fill:transparent;stroke:transparent;pointer-events:all}
+.circuit .drag-part.selected .drag-hit{stroke:var(--ac);stroke-opacity:.65;stroke-width:2;stroke-dasharray:5 4}
 .circuit .rotate-part{cursor:pointer;fill:var(--pn);stroke:var(--ln);stroke-width:1.5}
 .circuit .rotate-label{fill:var(--tx);font:700 16px system-ui,sans-serif;pointer-events:none}
 .circuit .voltage{fill:var(--ac);font:700 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
@@ -167,9 +173,10 @@ body.sbmode{height:100vh;overflow:hidden}
 <div id="cshare" hidden><textarea id="cshtxt" rows="3" spellcheck="false" aria-label="Link lub kod układu" placeholder="Tu pojawi się link do udostępnienia. Aby wczytać cudzy układ, wklej tu link lub kod i kliknij „Wczytaj”."></textarea><div class="ctl"><button data-shcopy="1">Kopiuj</button><button data-shload="1" class="p">Wczytaj</button><button data-shundo="1">Cofnij wczytanie</button></div></div>
 <div id="cmp" hidden><b>Gra wspólna</b> <span id="cmpst" aria-live="polite">Utwórz pokój albo dołącz kodem (2–6 osób). Połączenie idzie bezpośrednio między przeglądarkami.</span><div class="ctl"><button data-mphost="1" class="p">Utwórz pokój</button><input id="cmpcode" maxlength="5" size="9" placeholder="kod pokoju" aria-label="Kod pokoju" autocomplete="off"><button data-mpjoin="1">Dołącz</button><button data-mpcopy="1">Kopiuj link zaproszenia</button><button data-mpleave="1">Rozłącz</button></div></div>
 <div id="cmsg" aria-live="polite"></div><div id="cread" class="mu"></div>
+<div id="cselection" hidden><span id="cselection-name"></span><div class="selection-actions"><button data-selected-rotate>Obróć</button><button data-selected-delete>Usuń</button></div></div>
 <div class="ctl" id="ctool"><label>Napięcie baterii <select id="cvolt" aria-label="Napięcie baterii"><option value="1.5">1,5 V</option><option value="2">2 V</option><option value="2.2">2,2 V</option><option value="3">3 V</option><option value="3.3">3,3 V</option><option value="4">4 V</option><option value="4.2">4,2 V</option><option value="5">5 V</option><option value="6">6 V</option><option value="9">9 V</option><option value="12">12 V</option></select></label><button id="ccheck" class="p">Sprawdź obwód</button><button id="chint">Podpowiedź</button><button id="cundo">Cofnij przewód</button><button id="cdis">Rozładuj kondensatory</button><label class="mu">światło <input type="range" id="clight" min="0" max="100" value="70"></label><label class="mu">temperatura <input type="range" id="ctemp" min="-20" max="120" value="25"> <span id="ctempv">25 °C</span></label><label class="mu"><input type="checkbox" id="csnd"> dźwięk</label><button id="ccancel">Anuluj przewód</button><button id="cclear">Usuń przewody</button><button id="cnext">Następny układ</button></div>
 </aside>
-<p class="mu" style="margin-top:10px">Przeciągnij element, aby go przesunąć. Obróć go, klikając ↻ przy symbolu. Kliknij zacisk początkowy, potem drugi zacisk, aby utworzyć przewód z automatycznymi zakrętami; klikaj wolne punkty, aby poprowadzić własną trasę. Kliknij rezystor, Zener, kondensator, bezpiecznik, ogniwo lub termistor, aby zmienić jego wartość. Kolorowe LED-y mają różne napięcia przewodzenia. Model napięć jest uproszczony; rzeczywiste LED-y wymagają ograniczenia prądu rezystorem.</p>
+<p class="mu" style="margin-top:10px">Przeciągnij element, aby go przesunąć. Kliknij go, aby zaznaczyć; przyciski „Obróć” i „Usuń” pojawią się w panelu po prawej. Kliknij zacisk początkowy, potem drugi zacisk, aby utworzyć przewód z automatycznymi zakrętami; klikaj wolne punkty, aby poprowadzić własną trasę. Kliknij rezystor, Zener, kondensator, bezpiecznik, ogniwo lub termistor, aby zmienić jego wartość. Kolorowe LED-y mają różne napięcia przewodzenia. Model napięć jest uproszczony; rzeczywiste LED-y wymagają ograniczenia prądu rezystorem.</p>
 <p class="mu">Symulacja działa na żywo: żarówki i LED-y świecą zależnie od prądu, silnik się kręci, brzęczyk gra (włącz „dźwięk”), a przewody pokazują przepływ prądu. Kliknij rezystor z kilkoma wartościami, aby go zmienić. Przytrzymaj przycisk, aby zewrzeć jego styki. Przepalony bezpiecznik wymienisz kliknięciem. Przeciążone elementy dostają ostrzeżenie i blokują zaliczenie układu.</p>
 <p class="mu">Nowe elementy: dioda Zenera (stabilizuje napięcie), warystor (ogranicza przepięcia po przekroczeniu progu), tyrystor SCR (zatrzaskuje stan po wyzwoleniu bramki), fotorezystor (zmienia opór wraz z suwakiem „światło”), potencjometr (kliknij, aby przesunąć suwak W), przekaźnik (prąd cewki zamyka styki), niezależne przełączniki i kondensator, który naprawdę się ładuje (czas płynie wolniej, by było to widać). „Usuń przewody” resetuje także zatrzaśnięty tyrystor. Za oszczędny układ dostajesz więcej gwiazdek, a „Cofnij przewód” usuwa ostatnie połączenie.</p>
 </section>
@@ -178,7 +185,7 @@ body.sbmode{height:100vh;overflow:hidden}
 const C=[
  {name:'Piaskownica',difficulty:'easy',free:true,sandbox:true,voltage:5,task:'Piaskownica: buduj własne układy. Dodawaj dowolne elementy z palety nad planszą (przycisk ✕ przy elemencie go usuwa, ↻ obraca), łącz je przewodami i obserwuj symulację na żywo. Zmieniaj napięcie baterii, klikaj rezystory i potencjometry, steruj światłem. Plansza zapisuje się w przeglądarce.',components:[]}
 ];
-let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false);
+let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false),selectedComponent=null,selectedLabel='';
 const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,y:c.y}])));
 const crot=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,0])));
 const cvolt=C.map(level=>level.voltage||3);
@@ -377,7 +384,7 @@ function sbDel(id){
  const ts=new Set(circuitNodes().filter(n=>n.component===id).map(n=>n.id));
  cw=cw.filter(w=>!ts.has(w.from)&&!ts.has(w.to));
  C[SB].components=C[SB].components.filter(c=>c.id!==id);delete cpos[SB][id];delete crot[SB][id];
- [cblown,ccap,ctog,cthyristor].forEach(o=>delete o[SB+id]);wireDraft=null;circuitPaint()}
+ [cblown,ccap,ctog,cthyristor].forEach(o=>delete o[SB+id]);wireDraft=null;if(selectedComponent===id){selectedComponent=null;selectedLabel=''}circuitPaint()}
 const SBP=true;
 let sbPrev='';
 const b64e=t=>btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -487,6 +494,10 @@ function zoomAt(f,cx,cy){const sv=$('cboard').querySelector('svg');if(!sv)return
  view.x+=(view.w-nw)*px;view.y+=(view.h-nh)*py;view.w=nw;view.h=nh;clampView();applyView()}
 function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n])),S=sim(false);
+ const selected=C[SB].components.find(c=>c.id===selectedComponent);
+ if(!selected){selectedComponent=null;selectedLabel=''}
+ $('cselection').hidden=ci!==SB||!selectedComponent;
+ $('cselection-name').textContent=selectedLabel;
  $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
  $('ctask').textContent=`Układ ${ci+1}: ${C[ci].task}`;
  $('cvolt').value=String(cvolt[ci]);
@@ -506,7 +517,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  for(const c of C[ci].components){
   const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Rezystor '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik '+(c.rating||.5)+' A':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='capacitor'?(c.polarized?'Kondensator + ':'Kondensator ')+(c.c||470)+' µF':type==='transistor'?'Tranzystor NPN':type==='pnp'?'Tranzystor PNP':type==='mosfet'?'N-MOSFET':type==='pmos'?'P-MOSFET':type==='jfet'?'JFET N-kanałowy':type==='pjfet'?'JFET P-kanałowy':type==='ntc'?'Termistor NTC R25 '+(c.r||1000)+' Ω':type==='ptc'?'Termistor PTC R25 '+(c.r||100)+' Ω':type==='thyristor'?'Tyrystor SCR':type==='varistor'?'Warystor '+(c.vz||6)+' V':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':type==='zener'?'Dioda Zenera '+(c.vz||5.1)+' V':type==='schottky'?'Dioda Schottky':type==='cell'?(c.e>3?'Bateria ':'Ogniwo ')+String(c.e).replace('.',',')+' V':type==='spdt'?'Przełącznik SPDT':type==='seg7'?(c.ca?'7-seg wsp. anoda':'7-seg wsp. katoda'):type==='pot'?'Potencjometr '+(c.r||1000)+' Ω':type==='relay'?'Przekaźnik':type==='ldr'?'Fotorezystor':type==='toggle'?'Przełącznik':`LED ${c.colorName||''}`;
   const start=svg.length;
-  svg+=`<g data-drag="${id}" class="drag-part">`;
+  svg+=`<g data-drag="${id}" data-label="${label}" class="drag-part${selectedComponent===id?' selected':''}">`;
   svg+=`<rect x="${x-34}" y="${y-34}" width="68" height="68" class="drag-hit"/>`;
   svg+=`<g transform="rotate(${angle} ${x} ${y})">`;
   if(type==='lamp')svg+=glow(S.b[id],'#ffd43b',x,y)+`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-11} ${y-11}L${x+11} ${y+11}M${x+11} ${y-11}L${x-11} ${y+11}" class="sym"/>`;
@@ -559,8 +570,6 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
   if(S.ovl[id])svg+=`<text x="${x}" y="${y+58}" class="wt" text-anchor="middle">⚠ przeciążenie</text>`;
   if(type==='switch')svg+=`<text x="${x}" y="${y+42}" class="cm" text-anchor="middle">${cclosed?'zamknięty':'otwarty'} – kliknij</text>`;
   svg+='</g>';
-  svg+=`<g data-rotate="${id}" tabindex="0" role="button" aria-label="Obróć: ${label}"><circle cx="${x+34}" cy="${y-28}" r="12" class="rotate-part"/><text x="${x+34}" y="${y-23}" text-anchor="middle" class="rotate-label">↻</text></g>`;
-  if(C[ci].sandbox)svg+=`<g data-del="${id}" tabindex="0" role="button" aria-label="Usuń: ${label}"><circle cx="${x-34}" cy="${y-28}" r="12" class="rotate-part"/><text x="${x-34}" y="${y-23}" text-anchor="middle" class="rotate-label">✕</text></g>`;
   svg+='</g>';
   {const ln=[];svg=svg.slice(0,start)+svg.slice(start).replace(/<text x="-?[\d.]+" y="(-?[\d.]+)" class="(ct|cm|voltage|wt)" text-anchor="middle">([\s\S]*?)<\/text>/g,(m,yy,cls,t)=>{const dy=+yy-y;if(Math.abs(dy)<28)return m;ln.push({dy,cls,t});return''});if(ln.length)blocks.push({id,x,y,ln:ln.sort((p,q)=>p.dy-q.dy)})}
  }
@@ -650,11 +659,27 @@ function circuitPoint(event,svg){
  const rect=svg.getBoundingClientRect();
  return{x:view.x+(event.clientX-rect.left)*view.w/rect.width,y:view.y+(event.clientY-rect.top)*view.h/rect.height};
 }
+function selectSandboxComponent(group){
+ if(!group||ci!==SB)return;
+ const previous=$('cboard').querySelector('.drag-part.selected');
+ if(previous&&previous!==group)previous.classList.remove('selected');
+ selectedComponent=group.dataset.drag;
+ selectedLabel=group.dataset.label||'Element';
+ group.classList.add('selected');
+ $('cselection-name').textContent=selectedLabel;
+ $('cselection').hidden=false;
+}
+function clearSandboxSelection(){
+ selectedComponent=null;selectedLabel='';
+ $('cselection').hidden=true;
+ $('cboard').querySelector('.drag-part.selected')?.classList.remove('selected');
+}
 document.addEventListener('pointerdown',e=>{
  if(e.button!==0)return;
- if(e.target.closest('[data-rotate],[data-del],[data-terminal],[data-wire]'))return;
+ if(e.target.closest('[data-terminal],[data-wire]'))return;
  const target=e.target.closest('[data-drag]');
  if(!target)return;
+ selectSandboxComponent(target);
  const svg=target.ownerSVGElement,point=circuitPoint(e,svg),id=target.dataset.drag,origin=cpos[ci][id];
  cdrag={id,start:point,origin:{...origin},moved:false};
 });
@@ -686,9 +711,12 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const component=e.target.closest('[data-drag]');
+ if(component)selectSandboxComponent(component);
+ else if(ci===SB&&e.target.closest('[data-canvas]')&&!wireDraft)clearSandboxSelection();
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
- if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
+ if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;clearSandboxSelection();$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
   const difficulty=$('cdiff').value,available=C.map((level,index)=>({level,index})).filter(x=>!x.level.sandbox&&(difficulty==='any'||x.level.difficulty===difficulty));
   const choices=available.filter(x=>x.index!==ci),pool=choices.length?choices:available,choice=pool[Math.floor(Math.random()*pool.length)];
@@ -718,10 +746,11 @@ document.addEventListener('click',e=>{
  if(t.dataset.mpleave){mpLeave('Rozłączono.');return}
  if(t.dataset.mpcopy){if(!mp.code){mpSay('Najpierw utwórz pokój.');return}const u=location.href.split('#')[0]+'#room='+mp.code;try{navigator.clipboard.writeText(u).then(()=>mpSay('Link zaproszenia skopiowano: '+u),()=>mpSay('Link zaproszenia: '+u))}catch(e){mpSay('Link zaproszenia: '+u)}return}
  if(t.dataset.add!==undefined){sbAdd(+t.dataset.add);return}
+ if(t.dataset.selectedDelete!==undefined){if(selectedComponent)sbDel(selectedComponent);return}
  if(t.dataset.del){sbDel(t.dataset.del);return}
- if(t.dataset.sbclear){C[SB].components=[];cpos[SB]={};crot[SB]={};cw=[];wireDraft=null;cblown={};ccap={};ctog={};cthyristor={};$('cmsg').textContent='';circuitPaint();return}
- if(t.dataset.rotate){
-  const id=t.dataset.rotate;crot[ci][id]=(crot[ci][id]+90)%360;
+ if(t.dataset.sbclear){C[SB].components=[];cpos[SB]={};crot[SB]={};cw=[];wireDraft=null;cblown={};ccap={};ctog={};cthyristor={};clearSandboxSelection();$('cmsg').textContent='';circuitPaint();return}
+ if(t.dataset.selectedRotate!==undefined||t.dataset.rotate){
+  const id=t.dataset.selectedRotate!==undefined?selectedComponent:t.dataset.rotate;if(!id)return;crot[ci][id]=(crot[ci][id]+90)%360;
   $('cmsg').textContent='';circuitPaint();return;
  }
  if(t.dataset.terminal){
