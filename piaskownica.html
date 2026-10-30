@@ -85,12 +85,9 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #cmp[hidden]{display:none}
 #cmp input{font:inherit;padding:6px 8px;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:4px}
 #cmp .ctl{margin-top:6px}
-#ctabs{display:none}
 .pg{display:flex;flex-direction:column;padding:4px 10px;border-right:1px solid var(--ln);flex:none}
 .pgl{font-size:11px;color:var(--mu);margin-bottom:3px}
 .pgb{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);gap:4px}
-.tab{padding:6px 16px;color:var(--mu);text-decoration:none;border-right:1px solid var(--ln)}
-.tab.on{background:var(--pn);color:var(--tx);font-weight:600;border-bottom:2px solid var(--ac)}
 body.sbmode{height:100vh;overflow:hidden}
 .sbmode main{max-width:none;margin:0;padding:0;height:100vh;display:flex;flex-direction:column}
 .sbmode header{margin:0;padding:6px 12px;background:var(--pn);border-bottom:1px solid var(--ln);flex-wrap:nowrap}
@@ -101,7 +98,6 @@ body.sbmode{height:100vh;overflow:hidden}
 .sbmode #cpal{grid-column:1/3;grid-row:1;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;gap:0;margin:0;background:var(--pn);border-bottom:1px solid var(--ln)}
 .sbmode #cpal button{padding:3px 8px;font-size:12px;white-space:nowrap}
 .sbmode .pg.act{margin-left:auto;border-right:0;border-left:1px solid var(--ln)}
-.sbmode #ctabs{display:flex;grid-column:1;grid-row:2;background:var(--bg);border-bottom:1px solid var(--ln)}
 .sbmode #cwrap{grid-column:1;grid-row:3;overflow:auto}
 .sbmode #cside{grid-column:2;grid-row:2/4;overflow:auto;display:flex;flex-direction:column;background:var(--pn);border-left:1px solid var(--ln)}
 .sbmode #cside>div{padding:8px 10px;border-bottom:1px solid var(--ln);margin:0}
@@ -112,6 +108,13 @@ body.sbmode{height:100vh;overflow:hidden}
 .sbmode #ctool::before{content:"Właściwości"}.sbmode #cread::before{content:"Odczyty"}.sbmode #cmsg::before{content:"Komunikaty"}
 .sbmode #ctool label{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .sbmode #ctool button{width:100%;text-align:left}
+.sbmode #cwrap{background:var(--bg)}
+.sbmode #cboard svg{touch-action:none;cursor:grab}
+.sbmode #cboard.panning svg{cursor:grabbing}
+#czoom{display:none}
+.sbmode #czoom{display:flex;gap:4px;align-items:center;position:absolute;right:12px;bottom:12px;z-index:3;background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:3px}
+.sbmode #czoom button{padding:2px 9px;font-size:14px}
+#czv{min-width:46px;text-align:center;font-size:12px;color:var(--mu)}
 @media(max-width:900px){body.sbmode{height:auto;overflow:auto}.sbmode main{height:auto}.sbmode .circuit{display:block}.sbmode #cside{border-left:0}}
 .circuit nav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .circuit svg{display:block;width:100%;min-width:640px;height:auto;touch-action:manipulation}
@@ -122,11 +125,12 @@ body.sbmode{height:100vh;overflow:hidden}
 .circuit .bend{fill:var(--ac);pointer-events:none}
 .circuit .part{stroke:var(--tx);stroke-width:3;fill:var(--pn)}
 .circuit .sym{stroke:var(--tx);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.circuit .led{fill:var(--led-color,var(--tx));stroke:var(--tx);stroke-width:1.5}
-.circuit .light{stroke:var(--led-color,var(--ac));stroke-width:2.5;fill:none}
+.circuit .led{--led-color:var(--tx);fill:var(--led-color);stroke:var(--tx);stroke-width:1.5}
+.circuit .light{--led-color:var(--ac);stroke:var(--led-color);stroke-width:2.5;fill:none}
 .circuit .motor-letter{fill:var(--tx);font:700 20px system-ui,sans-serif}
 .circuit .drag-part{cursor:grab;touch-action:none}
 .circuit .drag-part:active{cursor:grabbing}
+.circuit .drag-hit{fill:transparent;stroke:transparent;pointer-events:all}
 .circuit .rotate-part{cursor:pointer;fill:var(--pn);stroke:var(--ln);stroke-width:1.5}
 .circuit .rotate-label{fill:var(--tx);font:700 16px system-ui,sans-serif;pointer-events:none}
 .circuit .voltage{fill:var(--ac);font:700 15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
@@ -158,22 +162,21 @@ body.sbmode{height:100vh;overflow:hidden}
 <nav id="clv" aria-label="Układy elektryczne"></nav>
 <div class="ctl" id="crow"><label>Losuj poziom <select id="cdiff" aria-label="Trudność losowanego poziomu"><option value="any">dowolny</option><option value="easy">łatwy</option><option value="hard">trudny</option></select></label><button id="crandom">Losuj zadanie</button></div>
 <div id="cpal" hidden></div>
-<div id="ctabs"><a class="tab" href="obwody.html">Start</a><span class="tab on">*Piaskownica</span></div>
-<div id="cwrap" style="position:relative"><div id="cboard"></div><svg id="ccur" viewBox="0 0 700 360" preserveAspectRatio="xMinYMin meet" aria-hidden="true" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></svg></div>
+<div id="cwrap" style="position:relative"><div id="cboard"></div><svg id="ccur" viewBox="0 0 700 360" preserveAspectRatio="xMinYMin meet" aria-hidden="true" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></svg><div id="czoom"><button data-zout="1" aria-label="Oddal">−</button><span id="czv">100%</span><button data-zin="1" aria-label="Przybliż">+</button><button data-zfit="1" aria-label="Resetuj widok">Reset</button></div></div>
 <aside id="cside">
 <div id="cshare" hidden><textarea id="cshtxt" rows="3" spellcheck="false" aria-label="Link lub kod układu" placeholder="Tu pojawi się link do udostępnienia. Aby wczytać cudzy układ, wklej tu link lub kod i kliknij „Wczytaj”."></textarea><div class="ctl"><button data-shcopy="1">Kopiuj</button><button data-shload="1" class="p">Wczytaj</button><button data-shundo="1">Cofnij wczytanie</button></div></div>
 <div id="cmp" hidden><b>Gra wspólna</b> <span id="cmpst" aria-live="polite">Utwórz pokój albo dołącz kodem (2–6 osób). Połączenie idzie bezpośrednio między przeglądarkami.</span><div class="ctl"><button data-mphost="1" class="p">Utwórz pokój</button><input id="cmpcode" maxlength="5" size="9" placeholder="kod pokoju" aria-label="Kod pokoju" autocomplete="off"><button data-mpjoin="1">Dołącz</button><button data-mpcopy="1">Kopiuj link zaproszenia</button><button data-mpleave="1">Rozłącz</button></div></div>
 <div id="cmsg" aria-live="polite"></div><div id="cread" class="mu"></div>
 <div class="ctl" id="ctool"><label>Napięcie baterii <select id="cvolt" aria-label="Napięcie baterii"><option value="1.5">1,5 V</option><option value="2">2 V</option><option value="2.2">2,2 V</option><option value="3">3 V</option><option value="3.3">3,3 V</option><option value="4">4 V</option><option value="4.2">4,2 V</option><option value="5">5 V</option><option value="6">6 V</option><option value="9">9 V</option><option value="12">12 V</option></select></label><button id="ccheck" class="p">Sprawdź obwód</button><button id="chint">Podpowiedź</button><button id="cundo">Cofnij przewód</button><button id="cdis">Rozładuj kondensatory</button><label class="mu">światło <input type="range" id="clight" min="0" max="100" value="70"></label><label class="mu">temperatura <input type="range" id="ctemp" min="-20" max="120" value="25"> <span id="ctempv">25 °C</span></label><label class="mu"><input type="checkbox" id="csnd"> dźwięk</label><button id="ccancel">Anuluj przewód</button><button id="cclear">Usuń przewody</button><button id="cnext">Następny układ</button></div>
 </aside>
-<p class="mu" style="margin-top:10px">Przeciągnij element, aby go przesunąć. Obróć go, klikając ↻ przy symbolu. Kliknij zacisk początkowy, potem drugi zacisk, aby utworzyć przewód z automatycznymi zakrętami; klikaj wolne punkty, aby poprowadzić własną trasę. Kolorowe LED-y mają różne napięcia przewodzenia. Model napięć jest uproszczony; rzeczywiste LED-y wymagają ograniczenia prądu rezystorem.</p>
-<p class="mu">Symulacja działa na żywo: żarówki i LED-y świecą zależnie od prądu, silnik się kręci, brzęczyk gra (włącz „dźwięk”), a przewody pokazują przepływ prądu. Kliknij opornik z kilkoma wartościami, aby go zmienić. Przytrzymaj przycisk, aby zewrzeć jego styki. Przepalony bezpiecznik wymienisz kliknięciem. Przeciążone elementy dostają ostrzeżenie i blokują zaliczenie układu.</p>
+<p class="mu" style="margin-top:10px">Przeciągnij element, aby go przesunąć. Obróć go, klikając ↻ przy symbolu. Kliknij zacisk początkowy, potem drugi zacisk, aby utworzyć przewód z automatycznymi zakrętami; klikaj wolne punkty, aby poprowadzić własną trasę. Kliknij rezystor, Zener, kondensator, bezpiecznik, ogniwo lub termistor, aby zmienić jego wartość. Kolorowe LED-y mają różne napięcia przewodzenia. Model napięć jest uproszczony; rzeczywiste LED-y wymagają ograniczenia prądu rezystorem.</p>
+<p class="mu">Symulacja działa na żywo: żarówki i LED-y świecą zależnie od prądu, silnik się kręci, brzęczyk gra (włącz „dźwięk”), a przewody pokazują przepływ prądu. Kliknij rezystor z kilkoma wartościami, aby go zmienić. Przytrzymaj przycisk, aby zewrzeć jego styki. Przepalony bezpiecznik wymienisz kliknięciem. Przeciążone elementy dostają ostrzeżenie i blokują zaliczenie układu.</p>
 <p class="mu">Nowe elementy: dioda Zenera (stabilizuje napięcie), warystor (ogranicza przepięcia po przekroczeniu progu), tyrystor SCR (zatrzaskuje stan po wyzwoleniu bramki), fotorezystor (zmienia opór wraz z suwakiem „światło”), potencjometr (kliknij, aby przesunąć suwak W), przekaźnik (prąd cewki zamyka styki), niezależne przełączniki i kondensator, który naprawdę się ładuje (czas płynie wolniej, by było to widać). „Usuń przewody” resetuje także zatrzaśnięty tyrystor. Za oszczędny układ dostajesz więcej gwiazdek, a „Cofnij przewód” usuwa ostatnie połączenie.</p>
 </section>
 </main>
 <script>const $=id=>document.getElementById(id);
 const C=[
- {name:'Piaskownica',difficulty:'easy',free:true,sandbox:true,voltage:5,task:'Piaskownica: buduj własne układy. Dodawaj dowolne elementy z palety nad planszą (przycisk ✕ przy elemencie go usuwa, ↻ obraca), łącz je przewodami i obserwuj symulację na żywo. Zmieniaj napięcie baterii, klikaj oporniki i potencjometry, steruj światłem. Plansza zapisuje się w przeglądarce.',components:[]}
+ {name:'Piaskownica',difficulty:'easy',free:true,sandbox:true,voltage:5,task:'Piaskownica: buduj własne układy. Dodawaj dowolne elementy z palety nad planszą (przycisk ✕ przy elemencie go usuwa, ↻ obraca), łącz je przewodami i obserwuj symulację na żywo. Zmieniaj napięcie baterii, klikaj rezystory i potencjometry, steruj światłem. Plansza zapisuje się w przeglądarce.',components:[]}
 ];
 let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false);
 const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,y:c.y}])));
@@ -250,7 +253,7 @@ function routePoints(from,to,waypoints=[]){
 }
 const pathOf=points=>points.map((p,i)=>`${i?'L':'M'}${p.x} ${p.y}`).join(' ');
 let cblown={},cbtn=false,hintSet=new Set(),au=null,ao=null,ctog={},ccap={},cthyristor={};
-const LB={lamp:'żarówki',switch:'wyłącznika',resistor:'opornika',motor:'silnika',fuse:'bezpiecznika',buzzer:'brzęczyka',diode:'diody',capacitor:'kondensatora',transistor:'tranzystora',pnp:'tranzystora PNP',mosfet:'tranzystora MOSFET',thyristor:'tyrystora',varistor:'warystora',led:'LED',ammeter:'amperomierza',voltmeter:'woltomierza',button:'przycisku',zener:'diody Zenera',pot:'potencjometru',relay:'przekaźnika',ldr:'fotorezystora',toggle:'przełącznika',ntc:'termistora NTC',ptc:'termistora PTC',pmos:'tranzystora P-MOSFET',jfet:'tranzystora JFET',pjfet:'tranzystora JFET P'};
+const LB={lamp:'żarówki',switch:'wyłącznika',resistor:'rezystora',motor:'silnika',fuse:'bezpiecznika',buzzer:'brzęczyka',diode:'diody',capacitor:'kondensatora',transistor:'tranzystora',pnp:'tranzystora PNP',mosfet:'tranzystora MOSFET',thyristor:'tyrystora',varistor:'warystora',led:'LED',ammeter:'amperomierza',voltmeter:'woltomierza',button:'przycisku',zener:'diody Zenera',pot:'potencjometru',relay:'przekaźnika',ldr:'fotorezystora',toggle:'przełącznika',ntc:'termistora NTC',ptc:'termistora PTC',pmos:'tranzystora P-MOSFET',jfet:'tranzystora JFET',pjfet:'tranzystora JFET P'};
 const DT=.0005,lt=()=>$("clight")?+$("clight").value/100:.7,tp=()=>$("ctemp")?+$("ctemp").value:25;
 const glow=(b,col,x,y)=>b>.03?`<circle cx="${x}" cy="${y}" r="38" fill="${col}" opacity="${(b*.65).toFixed(2)}"/>`:'';
 try{const nw=JSON.parse(localStorage.getItem('obwody2')),od=JSON.parse(localStorage.getItem('obwody1'));(nw||(od||[]).slice(0,30)).forEach((v,i)=>{if(i<C.length)csolved[i]=v===true?1:+v||0})}catch(e){}
@@ -277,7 +280,8 @@ function sim(btn,light,ss,tg,temp){light=light??lt();temp=temp??tp();
    E.push({id:t,a:t+'a',b:t+'k',thyristor:1,vf:.8,on:ss?0:!!cthyristor[ci+t],gate:t+'g'});
    E.push({id:t+'gk',a:t+'g',b:t+'k',d:1,vf:.7});
   }
-  else if(['mosfet','pmos','jfet','pjfet'].includes(y))E.push({id:t,a:t+'d',b:t+'s',gate:t+'g',mos:1,pch:y==='pmos'||y==='pjfet',vth:y==='jfet'||y==='pjfet'?-2:(c.vth||2)});
+  else if(y==='jfet'||y==='pjfet')E.push({id:t,a:t+'d',b:t+'s',gate:t+'g',jf:1,gm:.05,gmax:.05,vp:2,pch:y==='pjfet'});
+  else if(y==='mosfet'||y==='pmos')E.push({id:t,a:t+'d',b:t+'s',gate:t+'g',mos:1,pch:y==='pmos',vth:c.vth||2});
   else if(y==='schottky')E.push({id:t,a,b,d:1,vf:.3});
   else if(y==='cell')E.push({id:t,a,b,g:1,ie:c.e});
   else if(y==='spdt'){const up=tg?!!tg[t]:!!ctog[ci+t];E.push({id:t,a,b:up?t+'c':t+'b',g:100})}
@@ -294,9 +298,9 @@ function sim(btn,light,ss,tg,temp){light=light??lt();temp=temp??tp();
  const gnd=f('bn'),ix={};let n=0;
  const nd=x=>{x=f(x);return x===gnd?-1:(x in ix?ix[x]:(ix[x]=n++))};
  const bp=nd('bp');E.forEach(e=>{e.p=nd(e.a);e.q=nd(e.b);if(e.gate)e.gp=nd(e.gate)});
- const gOf=e=>e.d?(e.on?.5:1e-9):e.dep?(e.dep.on?(e.dg||.5):1e-9):e.mos?(e.on?.5:1e-9):e.varistor?(e.on?1:1e-9):e.thyristor?(e.on?.5:1e-9):e.g;
+ const gOf=e=>e.d?(e.on?.5:1e-9):e.dep?(e.dep.on?(e.dg||.5):1e-9):e.jf?Math.max(1e-9,e.gm):e.mos?(e.on?.5:1e-9):e.varistor?(e.on?1:1e-9):e.thyristor?(e.on?.5:1e-9):e.g;
  let V=[];const vv=p=>p<0?0:V[p];
- for(let it=0;it<20;it++){
+ for(let it=0;it<80;it++){
   const G=Array.from({length:n},()=>Array(n+1).fill(0));
   const st=(p,q,g,ie)=>{if(p>=0){G[p][p]+=g;G[p][n]+=ie;if(q>=0)G[p][q]-=g}if(q>=0){G[q][q]+=g;G[q][n]-=ie;if(p>=0)G[q][p]-=g}};
   for(let k=0;k<n;k++)G[k][k]+=1e-9;
@@ -316,6 +320,7 @@ function sim(btn,light,ss,tg,temp){light=light??lt();temp=temp??tp();
     else if(e.on&&current<.01){e.on=0;ch=1}
    }
    else if(e.coil){const I=Math.abs(e.g*d);if(!e.on&&I>.02){e.on=1;ch=1}else if(e.on&&I<.012){e.on=0;ch=1}}
+   else if(e.jf){const vgs=e.pch?vv(e.q)-vv(e.gp):vv(e.gp)-vv(e.q),tg2=e.gmax*Math.pow(Math.max(0,Math.min(1,1+vgs/e.vp)),2),ng=e.gm+.3*(tg2-e.gm);if(Math.abs(ng-e.gm)>.002*e.gmax)ch=1;e.gm=ng}
    else if(e.mos){const vgs=e.pch?vv(e.q)-vv(e.gp):vv(e.gp)-vv(e.q);if(!e.on&&vgs>e.vth){e.on=1;ch=1}else if(e.on&&vgs<e.vth-.1){e.on=0;ch=1}}
   }
   if(!ch)break;
@@ -325,17 +330,17 @@ function sim(btn,light,ss,tg,temp){light=light??lt();temp=temp??tp();
  S.ib=bp<0?U*2:(U-V[bp])*2;
  for(const c of lv.components){
   const t=c.id,i=S.i[t]||0,y=c.type;
-  if(y==='lamp'){const P=i*i*20;S.b[t]=Math.min(1,P/.45);S.lit[t]=S.b[t]>.04;if(P>2.2){S.ovl[t]=1;S.bad.push('Żarówka jest przeciążona: za duże napięcie albo brak opornika.')}}
-  else if(y==='led'){S.b[t]=i<.0005?0:Math.min(1,i/.02);S.lit[t]=S.b[t]>.04;if(i>.03){S.ovl[t]=1;S.bad.push('LED jest przeciążona ('+(i*1000).toFixed(0)+' mA). Zwiększ opornik.')}}
+  if(y==='lamp'){const P=i*i*20;S.b[t]=Math.min(1,P/.45);S.lit[t]=S.b[t]>.04;if(P>2.2){S.ovl[t]=1;S.bad.push('Żarówka jest przeciążona: za duże napięcie albo brak rezystora.')}}
+  else if(y==='led'){S.b[t]=i<.0005?0:Math.min(1,i/.02);S.lit[t]=S.b[t]>.04;if(i>.03){S.ovl[t]=1;S.bad.push('LED jest przeciążona ('+(i*1000).toFixed(0)+' mA). Zwiększ rezystor.')}}
   else if(y==='motor'){S.b[t]=Math.min(1,i/.15);S.on[t]=i>.01}
   else if(y==='buzzer'){S.on[t]=i>.01;if(S.on[t])S.snd=true}
   else if(y==='transistor'||y==='pnp')S.on[t]=!!E.find(e=>e.id===t+'ce').on;
   else if(y==='thyristor')S.on[t]=!!E.find(e=>e.id===t).on;
-  else if(['mosfet','pmos','jfet','pjfet'].includes(y))S.on[t]=!!E.find(e=>e.id===t).on;
+  else if(['mosfet','pmos','jfet','pjfet'].includes(y)){const je=E.find(e=>e.id===t);S.on[t]=je.jf?je.gm>.1*je.gmax:!!je.on}
   else if(y==='fuse'&&i>(c.rating||.5)&&!cblown[ci+t]){cblown[ci+t]=1;return sim(btn,light,ss,tg,temp)}
   if(y==='cell'&&(S.i[t]||0)>2){S.ovl[t]=1;S.bad.push('Ogniwo jest zwarte lub przeciążone.')}
-  if(y==='seg7'){S.seg[t]={};let ov=0;for(const sg of 'abcdefgh'){const i2=S.i[t+sg]||0;S.seg[t][sg]=i2<.0005?0:Math.min(1,i2/.01);if(i2>.03)ov=1}if(ov){S.ovl[t]=1;S.bad.push('Wyświetlacz ma przeciążony segment (ponad 30 mA). Dodaj opornik szeregowy.')}}
-  if(y==='zener'){S.i[t]=(S.i[t]||0)+(S.i[t+'z']||0);if(S.i[t]>.1){S.ovl[t]=1;S.bad.push('Dioda Zenera jest przeciążona. Dodaj opornik szeregowy.')}}
+  if(y==='seg7'){S.seg[t]={};let ov=0;for(const sg of 'abcdefgh'){const i2=S.i[t+sg]||0;S.seg[t][sg]=i2<.0005?0:Math.min(1,i2/.01);if(i2>.03)ov=1}if(ov){S.ovl[t]=1;S.bad.push('Wyświetlacz ma przeciążony segment (ponad 30 mA). Dodaj rezystor szeregowy.')}}
+  if(y==='zener'){S.i[t]=(S.i[t]||0)+(S.i[t+'z']||0);if(S.i[t]>.1){S.ovl[t]=1;S.bad.push('Dioda Zenera jest przeciążona. Dodaj rezystor szeregowy.')}}
   if(y==='relay')S.on[t]=!!E.find(e=>e.id===t).on;
   if(y==='fuse'&&cblown[ci+t])S.bad.push('Bezpiecznik się przepalił. Kliknij go, aby wymienić.');
  }
@@ -349,13 +354,14 @@ function chint(){const lv=C[ci],sol=lv.sol||lv.requiredWires;
  const nm=id=>{if(id==='bp')return'plus baterii';if(id==='bn')return'minus baterii';const t=lv.components.find(c=>c.id===id.slice(0,-1)).type,p=id.slice(-1);return'zacisk '+LB[t]+(t==='led'||t==='diode'||t==='zener'?(p==='a'?' (A)':' (K)'):['transistor','pnp','mosfet','pmos','jfet','pjfet','thyristor'].includes(t)?' ('+p.toUpperCase()+')':'')};
  hintSet=new Set(m);$('cmsg').textContent=`Podpowiedź: połącz ${nm(m[0])} z ${nm(m[1])}. Zaciski są podświetlone.`;circuitPaint();
 }
+const CYCLES={zener:{key:'vz',values:[2.4,3.3,4.7,5.1,6.2,9.1,12]},capacitor:{key:'c',values:[10,47,100,220,470,1000,2200,4700]},fuse:{key:'rating',values:[.1,.25,.5,1,2]},cell:{key:'e',values:[1.2,1.5,3,4.5,6,9,12]},ntc:{key:'r',values:[100,220,470,1000,2200,4700,10000]},ptc:{key:'r',values:[10,25,50,100,220,470,1000]}};
 const PAL=[['Żarówka',{type:'lamp'}],['LED czerwona',{type:'led',color:'#e03131',colorName:'czerwona',vf:1.8}],['LED zielona',{type:'led',color:'#2f9e44',colorName:'zielona',vf:2.2}],['LED niebieska',{type:'led',color:'#1971c2',colorName:'niebieska',vf:3}],['LED biała',{type:'led',color:'#f1f3f5',colorName:'biała',vf:3.2}],
- ['Opornik',{type:'resistor',r:220,rs:[10,22,47,100,220,330,470,680,1000,4700]}],['Potencjometr',{type:'pot',r:1000}],['Fotorezystor',{type:'ldr'}],['Silnik',{type:'motor'}],['Brzęczyk',{type:'buzzer'}],
+ ['Rezystor',{type:'resistor',r:220,rs:[10,22,47,100,220,330,470,680,1000,4700]}],['Potencjometr',{type:'pot',r:1000}],['Fotorezystor',{type:'ldr'}],['Silnik',{type:'motor'}],['Brzęczyk',{type:'buzzer'}],
  ['Wyłącznik',{type:'switch'}],['Przełącznik',{type:'toggle'}],['Przycisk',{type:'button'}],['Bezpiecznik',{type:'fuse',rating:.5}],
  ['Dioda',{type:'diode'}],['Dioda Zenera',{type:'zener',vz:5.1}],['Warystor',{type:'varistor',vz:6}],['Kondensator',{type:'capacitor',c:470}],['Kondensator elektrolityczny',{type:'capacitor',c:470,polarized:true}],
  ['Tranzystor NPN',{type:'transistor'}],['Tranzystor PNP',{type:'pnp'}],['MOSFET N',{type:'mosfet'}],['Tyrystor',{type:'thyristor'}],['Przekaźnik',{type:'relay'}],['Amperomierz',{type:'ammeter'}],['Woltomierz',{type:'voltmeter'}],
  ['LED żółta',{type:'led',color:'#f59f00',colorName:'żółta',vf:2.1}],['Dioda Schottky',{type:'schottky'}],['Dioda Zenera 3,3 V',{type:'zener',vz:3.3}],['Ogniwo 1,5 V',{type:'cell',e:1.5}],['Bateria 9 V',{type:'cell',e:9}],['Przełącznik SPDT',{type:'spdt'}],['Wyświetlacz 7-seg, wsp. katoda',{type:'seg7'}],['Wyświetlacz 7-seg, wsp. anoda',{type:'seg7',ca:1}],
- ['MOSFET P',{type:'pmos'}],['JFET N',{type:'jfet'}],['JFET P',{type:'pjfet'}],['Termistor NTC',{type:'ntc',r:1000}],['Termistor PTC',{type:'ptc',r:100}]];
+ ['MOSFET P',{type:'pmos'}],['JFET N',{type:'jfet'}],['JFET P',{type:'pjfet'}],['Termistor NTC',{type:'ntc',r:1000,rs:CYCLES.ntc.values}],['Termistor PTC',{type:'ptc',r:100,rs:CYCLES.ptc.values}]];
 const PFX={lamp:'l',led:'d',diode:'d',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v',schottky:'sd',cell:'e',spdt:'w',seg7:'x',pmos:'q',jfet:'q',pjfet:'q',ntc:'nt',ptc:'pt'};
 const GR=[['Zasilanie',[29,30]],['Odbiorniki',[0,1,2,3,4,26,8,9]],['Wyświetlacze',[32,33]],['Rezystory i czujniki',[5,6,7,37,38]],['Kondensatory',[17,18]],['Sterowanie',[10,11,31,12,13,23]],['Półprzewodniki',[14,27,15,28,16,19,20,21,34,35,36,22]],['Pomiary',[24,25]]];
 $('cpal').innerHTML=GR.map(([n,ix])=>`<div class="pg"><span class="pgl">${n}</span><div class="pgb">${ix.map(i=>`<button data-add="${i}">${PAL[i][0]}</button>`).join('')}</div></div>`).join('')+'<div class="pg act"><span class="pgl">Plik i gra</span><div class="pgb"><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button><button data-sbclear="1">Wyczyść planszę</button></div></div>';
@@ -380,7 +386,7 @@ const vkey=d=>[d.color,d.polarized,d.vz,d.e,d.ca].join();
 const LEDV={'#e03131':0,'#2f9e44':1,'#1971c2':2,'#f1f3f5':3};
 function sbCode(){
  const comps=C[SB].components.map(c=>{const p=cpos[SB][c.id],o={i:c.id,t:c.type,x:p.x,y:p.y,a:crot[SB][c.id]||0};
-  if(c.r!==undefined&&c.rs)o.r=c.r;if(c.pos!==undefined)o.pos=c.pos;o.q=Math.max(0,PAL.filter(p=>p[1].type===c.type).findIndex(p=>vkey(p[1])===vkey(c)));if(ctog[SB+c.id])o.on=1;return o});
+  if(c.r!==undefined&&c.rs)o.r=c.r;if(c.pos!==undefined)o.pos=c.pos;for(const [type,cycle] of Object.entries(CYCLES))if(c.type===type)o[cycle.key]=c[cycle.key];o.q=Math.max(0,PAL.filter(p=>p[1].type===c.type).findIndex(p=>vkey(p[1])===vkey(c)));if(ctog[SB+c.id])o.on=1;return o});
  const w=(ci===SB?cw:sbw).map(q=>[q.from,q.to,(q.points||[]).map(p=>[Math.round(p.x),Math.round(p.y)])]);
  return 'OB1.'+b64e(JSON.stringify({v:cvolt[SB],c:comps,w}))}
 function sbParse(txt){
@@ -396,6 +402,7 @@ function sbParse(txt){
   const gq=PAL.filter(p=>p[1].type===o.t),base=gq[Math.round(num(o.q,0,gq.length-1,0))][1];
   const c={...JSON.parse(JSON.stringify(base)),id:o.i,x:num(o.x,210,660,300),y:num(o.y,75,295,185)};
   if(c.rs&&c.rs.includes(+o.r))c.r=+o.r;
+  for(const [type,cycle] of Object.entries(CYCLES))if(c.type===type&&cycle.values.includes(+o[cycle.key]))c[cycle.key]=+o[cycle.key];
   if(c.type==='pot'&&[10,25,50,75,90].includes(+o.pos))c.pos=+o.pos;
   comps.push(c);pos[c.id]={x:c.x,y:c.y};rot[c.id]=[0,90,180,270].includes(+o.a)?+o.a:0;if(o.on)tog[SB+c.id]=true}
  const V=[1.5,2,2.2,3,3.3,4,4.2,5,6,9,12],v=V.reduce((a,b)=>Math.abs(b-num(j.v,1,24,5))<Math.abs(a-num(j.v,1,24,5))?b:a);
@@ -472,12 +479,18 @@ function mpJoin(code){
  }).catch(e=>mpSay(String(e)))}
 function roomHash(){const m=/#room=([a-z0-9]{5})(?![a-z0-9])/.exec(location.hash);if(!m)return;
  ci=SB;mp.show=1;circuitPaint();$('cmpcode').value=m[1];mpJoin(m[1]);try{history.replaceState(null,'',location.href.split('#')[0])}catch(e){}}
+const view={x:0,y:0,w:700,h:360};
+function clampView(){view.x=Math.max(-view.w*.8,Math.min(700-view.w*.2,view.x));view.y=Math.max(-view.h*.8,Math.min(360-view.h*.2,view.y))}
+function applyView(){const v=view.x+' '+view.y+' '+view.w+' '+view.h,sv=$('cboard').querySelector('svg');if(sv)sv.setAttribute('viewBox',v);$('ccur').setAttribute('viewBox',v);$('czv').textContent=Math.round(700/view.w*100)+'%'}
+function zoomAt(f,cx,cy){const sv=$('cboard').querySelector('svg');if(!sv)return;const r=sv.getBoundingClientRect(),
+ px=cx==null?.5:(cx-r.left)/r.width,py=cy==null?.5:(cy-r.top)/r.height,nw=Math.max(175,Math.min(1750,view.w*f)),nh=nw*360/700;
+ view.x+=(view.w-nw)*px;view.y+=(view.h-nh)*py;view.w=nw;view.h=nh;clampView();applyView()}
 function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n])),S=sim(false);
  $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
  $('ctask').textContent=`Układ ${ci+1}: ${C[ci].task}`;
  $('cvolt').value=String(cvolt[ci]);
- let svg=`<svg viewBox="0 0 700 360" role="img" aria-label="Interaktywny schemat obwodu elektrycznego"><rect width="700" height="360" fill="transparent" data-canvas="true"/><text x="130" y="35" class="ct" text-anchor="middle">Bateria</text><text x="130" y="57" class="voltage" text-anchor="middle">U = ${cvolt[ci].toFixed(1)} V</text><text x="130" y="110" class="ct" text-anchor="middle">+</text><text x="130" y="295" class="ct" text-anchor="middle">−</text><line x1="130" y1="125" x2="130" y2="170" class="sym"/><line x1="105" y1="170" x2="155" y2="170" class="sym"/><line x1="115" y1="195" x2="145" y2="195" class="sym"/><line x1="130" y1="195" x2="130" y2="265" class="sym"/>`;
+ let svg=`<svg viewBox="${view.x} ${view.y} ${view.w} ${view.h}" role="img" aria-label="Interaktywny schemat obwodu elektrycznego"><defs><pattern id="sbgrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" style="stroke:var(--gr)"/></pattern></defs><rect x="-3000" y="-3000" width="6700" height="6360" fill="url(#sbgrid)" pointer-events="none"/><rect width="700" height="360" fill="none" stroke-dasharray="6 6" pointer-events="none" style="stroke:var(--ln)"/><rect x="-3000" y="-3000" width="6700" height="6360" fill="transparent" data-canvas="true"/><text x="130" y="35" class="ct" text-anchor="middle">Bateria</text><text x="130" y="57" class="voltage" text-anchor="middle">U = ${cvolt[ci].toFixed(1)} V</text><text x="130" y="110" class="ct" text-anchor="middle">+</text><text x="130" y="295" class="ct" text-anchor="middle">−</text><line x1="130" y1="125" x2="130" y2="170" class="sym"/><line x1="105" y1="170" x2="155" y2="170" class="sym"/><line x1="115" y1="195" x2="145" y2="195" class="sym"/><line x1="130" y1="195" x2="130" y2="265" class="sym"/>`;
  for(let i=0;i<cw.length;i++){
   const w=cw[i],a=byId[w.from],b=byId[w.to];
   if(a&&b){const pts=routePoints(a,b,w.points),d=pathOf(pts);
@@ -491,33 +504,34 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  }
  const blocks=[];
  for(const c of C[ci].components){
-  const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Opornik '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='capacitor'?(c.polarized?'Kondensator + ':'Kondensator ')+(c.c||470)+' µF':type==='transistor'?'Tranzystor NPN':type==='pnp'?'Tranzystor PNP':type==='mosfet'?'N-MOSFET':type==='pmos'?'P-MOSFET':type==='jfet'?'JFET N-kanałowy':type==='pjfet'?'JFET P-kanałowy':type==='ntc'?'Termistor NTC '+(c.r||1000)+' Ω':type==='ptc'?'Termistor PTC '+(c.r||100)+' Ω':type==='thyristor'?'Tyrystor SCR':type==='varistor'?'Warystor '+(c.vz||6)+' V':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':type==='zener'?'Dioda Zenera '+(c.vz||5.1)+' V':type==='schottky'?'Dioda Schottky':type==='cell'?(c.e>3?'Bateria ':'Ogniwo ')+String(c.e).replace('.',',')+' V':type==='spdt'?'Przełącznik SPDT':type==='seg7'?(c.ca?'7-seg wsp. anoda':'7-seg wsp. katoda'):type==='pot'?'Potencjometr '+(c.r||1000)+' Ω':type==='relay'?'Przekaźnik':type==='ldr'?'Fotorezystor':type==='toggle'?'Przełącznik':`LED ${c.colorName||''}`;
+  const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Rezystor '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik '+(c.rating||.5)+' A':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='capacitor'?(c.polarized?'Kondensator + ':'Kondensator ')+(c.c||470)+' µF':type==='transistor'?'Tranzystor NPN':type==='pnp'?'Tranzystor PNP':type==='mosfet'?'N-MOSFET':type==='pmos'?'P-MOSFET':type==='jfet'?'JFET N-kanałowy':type==='pjfet'?'JFET P-kanałowy':type==='ntc'?'Termistor NTC R25 '+(c.r||1000)+' Ω':type==='ptc'?'Termistor PTC R25 '+(c.r||100)+' Ω':type==='thyristor'?'Tyrystor SCR':type==='varistor'?'Warystor '+(c.vz||6)+' V':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':type==='zener'?'Dioda Zenera '+(c.vz||5.1)+' V':type==='schottky'?'Dioda Schottky':type==='cell'?(c.e>3?'Bateria ':'Ogniwo ')+String(c.e).replace('.',',')+' V':type==='spdt'?'Przełącznik SPDT':type==='seg7'?(c.ca?'7-seg wsp. anoda':'7-seg wsp. katoda'):type==='pot'?'Potencjometr '+(c.r||1000)+' Ω':type==='relay'?'Przekaźnik':type==='ldr'?'Fotorezystor':type==='toggle'?'Przełącznik':`LED ${c.colorName||''}`;
   const start=svg.length;
   svg+=`<g data-drag="${id}" class="drag-part">`;
+  svg+=`<rect x="${x-34}" y="${y-34}" width="68" height="68" class="drag-hit"/>`;
   svg+=`<g transform="rotate(${angle} ${x} ${y})">`;
   if(type==='lamp')svg+=glow(S.b[id],'#ffd43b',x,y)+`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-11} ${y-11}L${x+11} ${y+11}M${x+11} ${y-11}L${x-11} ${y+11}" class="sym"/>`;
-  else if(type==='resistor')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/>`+(c.rs?`<rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-res="${id}" tabindex="0" role="button" aria-label="Zmień wartość opornika" style="cursor:pointer"/>`:'');
+  else if(type==='resistor')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/>`+(c.rs?`<rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-res="${id}" tabindex="0" role="button" aria-label="Zmień wartość rezystora" style="cursor:pointer"/>`:'');
   else if(type==='motor')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">M</text>`+(S.on[id]?`<g class="spin" style="transform-origin:${x}px ${y}px;animation-duration:${(1.1-S.b[id]*.9).toFixed(2)}s"><circle cx="${x+16}" cy="${y}" r="3.5" fill="var(--ac)"/></g>`:'');
   else if(type==='led')svg+=glow(S.b[id],c.color,x,y)+`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="led" style="--led-color:${c.color}"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/><path d="M${x-6} ${y-22}l7-9m-7 9h8m-2-8v8M${x+4} ${y-17}l8-8m-8 8h8m-2-8v8" class="light"/>`;
   else if(type==='diode')svg+=`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="part"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/>`;
   else if(type==='varistor')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-13} ${y+13}L${x+13} ${y-13}M${x-5} ${y-4}L${x+5} ${y-4}M${x} ${y-9}L${x} ${y+1}" class="sym"/>`;
   else if(type==='thyristor')svg+=`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="part"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/><path d="M${x-28} ${y+28}L${x-8} ${y+10}" class="sym"/>`;
-  else if(type==='capacitor')svg+=`<line x1="${x-7}" y1="${y-22}" x2="${x-7}" y2="${y+22}" class="sym"/><line x1="${x+7}" y1="${y-22}" x2="${x+7}" y2="${y+22}" class="sym"/>`;
+  else if(type==='capacitor')svg+=`<line x1="${x-7}" y1="${y-22}" x2="${x-7}" y2="${y+22}" class="sym"/><line x1="${x+7}" y1="${y-22}" x2="${x+7}" y2="${y+22}" class="sym"/><rect x="${x-24}" y="${y-22}" width="48" height="44" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień pojemność kondensatora"/>`;
   else if(type==='transistor'||type==='pnp')svg+=`<circle cx="${x}" cy="${y}" r="27" class="part"/><line x1="${x-9}" y1="${y-20}" x2="${x-9}" y2="${y+20}" class="sym"/><path d="M${x-9} ${y-10}L${x+17} ${y-25}M${x+17} ${y-25}L${x+12} ${y-11}M${x+17} ${y-25}L${x+2} ${y-27}M${x-9} ${y+10}L${x+17} ${y+25}${type==='pnp'?`M${x+17} ${y+25}L${x+4} ${y+15}M${x+4} ${y+15}L${x+7} ${y+25}M${x+4} ${y+15}L${x+15} ${y+14}`:`M${x+17} ${y+25}L${x+3} ${y+22}M${x+17} ${y+25}L${x+14} ${y+11}`}M${x-40} ${y}L${x-9} ${y}" class="sym"/>`;
   else if(type==='pmos')svg+=`<circle cx="${x}" cy="${y}" r="27" class="part"/><line x1="${x-8}" y1="${y-19}" x2="${x-8}" y2="${y+19}" class="sym"/><line x1="${x+2}" y1="${y-16}" x2="${x+2}" y2="${y+16}" class="sym"/><path d="M${x} ${y-40}L${x} ${y-16}M${x-40} ${y}L${x-14} ${y}M${x} ${y+16}L${x} ${y+40}M${x-8} ${y-10}L${x+2} ${y-10}M${x-8} ${y+10}L${x+2} ${y+10}" class="sym"/><circle cx="${x-12}" cy="${y}" r="3" class="part"/>`;
   else if(type==='jfet'||type==='pjfet')svg+=`<circle cx="${x}" cy="${y}" r="27" class="part"/><line x1="${x+2}" y1="${y-18}" x2="${x+2}" y2="${y+18}" class="sym"/><path d="M${x} ${y-40}L${x} ${y-18}L${x+2} ${y-18}M${x} ${y+40}L${x} ${y+18}L${x+2} ${y+18}M${x-40} ${y}L${x-10} ${y}${type==='jfet'?`M${x-10} ${y}L${x-17} ${y-5}M${x-10} ${y}L${x-17} ${y+5}`:`M${x-10} ${y}L${x-3} ${y-5}M${x-10} ${y}L${x-3} ${y+5}`}" class="sym"/>`;
-  else if(type==='ntc'||type==='ptc')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/><path d="M${x-18} ${y+18}L${x+18} ${y-18}" class="sym"/><text x="${x}" y="${y+4}" class="cm" text-anchor="middle">${type==='ntc'?'NTC':'PTC'}</text>`;
+  else if(type==='ntc'||type==='ptc')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/><path d="M${x-18} ${y+18}L${x+18} ${y-18}" class="sym"/><text x="${x}" y="${y+4}" class="cm" text-anchor="middle">${type==='ntc'?'NTC':'PTC'}</text><rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień rezystancję R25 termistora"/>`;
   else if(type==='mosfet')svg+=`<circle cx="${x}" cy="${y}" r="27" class="part"/><line x1="${x-8}" y1="${y-19}" x2="${x-8}" y2="${y+19}" class="sym"/><line x1="${x+2}" y1="${y-16}" x2="${x+2}" y2="${y+16}" class="sym"/><path d="M${x} ${y-40}L${x} ${y-16}M${x-40} ${y}L${x-10} ${y}M${x} ${y+16}L${x} ${y+40}" class="sym"/><path d="M${x-8} ${y-10}L${x+2} ${y-10}M${x-8} ${y+10}L${x+2} ${y+10}" class="sym"/>`;
-  else if(type==='fuse')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" rx="3" class="part"/><path d="${cblown[ci+id]?`M${x-14} ${y}L${x-6} ${y-6}M${x+6} ${y+6}L${x+14} ${y}`:`M${x-14} ${y}L${x-5} ${y-6}L${x+5} ${y+6}L${x+14} ${y}`}" class="sym"/>`+(cblown[ci+id]?`<rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-fix="${id}" tabindex="0" role="button" aria-label="Wymień bezpiecznik" style="cursor:pointer"/>`:'');
+  else if(type==='fuse')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" rx="3" class="part"/><path d="${cblown[ci+id]?`M${x-14} ${y}L${x-6} ${y-6}M${x+6} ${y+6}L${x+14} ${y}`:`M${x-14} ${y}L${x-5} ${y-6}L${x+5} ${y+6}L${x+14} ${y}`}" class="sym"/><rect x="${x-24}" y="${y-13}" width="48" height="13" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień prąd znamionowy bezpiecznika" style="cursor:pointer"/>`+(cblown[ci+id]?`<rect x="${x-24}" y="${y}" width="48" height="13" fill="transparent" data-fix="${id}" tabindex="0" role="button" aria-label="Wymień bezpiecznik" style="cursor:pointer"/>`:'');
   else if(type==='buzzer')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><text x="${x}" y="${y+7}" class="motor-letter" text-anchor="middle">B</text><path d="M${x+28} ${y-10}q14 10 0 20m6-27q22 17 0 34" class="sym${S.on[id]?' pulse':''}"/>`;
   else if(type==='schottky')svg+=`<path d="M${x-12} ${y-12}L${x-12} ${y+12}L${x+8} ${y}Z" class="part"/><path d="M${x+4} ${y-8}L${x+4} ${y-12}L${x+10} ${y-12}L${x+10} ${y+12}L${x+16} ${y+12}L${x+16} ${y+8}" class="sym"/>`;
-  else if(type==='cell')svg+=`<path d="M${x-8} ${y-16}V${y+16}M${x+8} ${y-9}V${y+9}" class="sym"/><text x="${x-20}" y="${y-8}" class="cm" text-anchor="middle">+</text>`;
+  else if(type==='cell')svg+=`<path d="M${x-8} ${y-16}V${y+16}M${x+8} ${y-9}V${y+9}" class="sym"/><text x="${x-20}" y="${y-8}" class="cm" text-anchor="middle">+</text><rect x="${x-24}" y="${y-22}" width="48" height="44" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień napięcie ogniwa"/>`;
   else if(type==='spdt'){const up=!!ctog[ci+id];svg+=`<circle cx="${x-10}" cy="${y}" r="3.5" class="part"/><circle cx="${x+10}" cy="${y-16}" r="3.5" class="part"/><circle cx="${x+10}" cy="${y+16}" r="3.5" class="part"/><line x1="${x-10}" y1="${y}" x2="${x+10}" y2="${up?y+16:y-16}" class="sym"/><rect x="${x-30}" y="${y-26}" width="60" height="52" fill="transparent" data-tog="${id}" tabindex="0" role="button" aria-label="Przełącznik dwupozycyjny"/>`}
   else if(type==='seg7'){const sg=S.seg[id]||{},P={a:[-12,-32,24,5],b:[13,-28,5,25],c:[13,3,5,25],d:[-12,27,24,5],e:[-18,3,5,25],f:[-18,-28,5,25],g:[-12,-2,24,5]};
    svg+=`<rect x="${x-26}" y="${y-40}" width="52" height="80" class="part"/>`;
    for(const k in P){const q=P[k],lv=sg[k]||0;svg+=`<rect x="${x+q[0]}" y="${y+q[1]}" width="${q[2]}" height="${q[3]}" rx="1.5" fill="${lv>.03?'#ff3b30':'var(--ln)'}" opacity="${lv>.03?(.35+.65*lv).toFixed(2):.45}"/>`}
    const dp=sg.h||0;svg+=`<circle cx="${x+21}" cy="${y+33}" r="3" fill="${dp>.03?'#ff3b30':'var(--ln)'}" opacity="${dp>.03?(.35+.65*dp).toFixed(2):.45}"/>`}
-  else if(type==='zener')svg+=`<path d="M${x-12} ${y-12}L${x-12} ${y+12}L${x+8} ${y}Z" class="part"/><path d="M${x+14} ${y-12}L${x+8} ${y-12}L${x+8} ${y+12}L${x+2} ${y+12}" class="sym"/>`;
+  else if(type==='zener')svg+=`<path d="M${x-12} ${y-12}L${x-12} ${y+12}L${x+8} ${y}Z" class="part"/><path d="M${x+14} ${y-12}L${x+8} ${y-12}L${x+8} ${y+12}L${x+2} ${y+12}" class="sym"/><rect x="${x-24}" y="${y-20}" width="48" height="40" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień napięcie diody Zenera"/>`;
   else if(type==='ldr')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-10} ${y+8}L${x+10} ${y-8}" class="sym"/><path d="M${x-26} ${y-28}L${x-16} ${y-18}M${x-12} ${y-34}L${x-2} ${y-24}" class="sym"/>`;
   else if(type==='pot'){const pc=c.pos||50;svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/><text x="${x}" y="${y+5}" class="cm" text-anchor="middle">${pc}%</text><line x1="${x}" y1="${y+13}" x2="${x}" y2="${y+31}" class="sym"/><path d="M${x-6} ${y+22}L${x} ${y+13}L${x+6} ${y+22}" class="sym"/><rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-pot="${id}" tabindex="0" role="button" aria-label="Przesuń suwak potencjometru" style="cursor:pointer"/>`}
   else if(type==='relay'){const on=S.on[id];svg+=`<rect x="${x-30}" y="${y-24}" width="60" height="48" class="part"/><path d="M${x-26} ${y-6}q4-9 8 0t8 0 8 0 8 0" class="sym"/><circle cx="${x+22}" cy="${y-16}" r="3" class="part"/><circle cx="${x+22}" cy="${y+16}" r="3" class="part"/><line x1="${x+22}" y1="${y-16}" x2="${on?x+22:x+30}" y2="${on?y+16:y+3}" class="sym"/>`}
@@ -581,7 +595,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  svg+='</svg>';
  $('cboard').innerHTML=svg;
  $('cread').innerHTML=cw.length||C[ci].free?`Prąd z baterii: <b>${(S.ib*1000).toFixed(0)} mA</b>${[...new Set(S.bad)].map(x=>' <span class="warn">⚠ '+x+'</span>').join('')}`:'Narysuj przewody, a zobaczysz prąd i zachowanie elementów na żywo.';
- buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;$('cmp').hidden=ci!==SB||!(mp.show||mp.on);if(ci===SB){sbw=cw;sbSave()}if(mp.on)mpDirty();
+ buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;$('cmp').hidden=ci!==SB||!(mp.show||mp.on);applyView();if(ci===SB){sbw=cw;sbSave()}if(mp.on)mpDirty();
  $('ccancel').disabled=!wireDraft;
  $('cnext').disabled=ci===C.length-1;
 }
@@ -634,11 +648,11 @@ function checkCircuit(){
 }
 function circuitPoint(event,svg){
  const rect=svg.getBoundingClientRect();
- return{x:(event.clientX-rect.left)*700/rect.width,y:(event.clientY-rect.top)*360/rect.height};
+ return{x:view.x+(event.clientX-rect.left)*view.w/rect.width,y:view.y+(event.clientY-rect.top)*view.h/rect.height};
 }
 document.addEventListener('pointerdown',e=>{
  if(e.button!==0)return;
- if(e.target.closest('[data-rotate],[data-del]'))return;
+ if(e.target.closest('[data-rotate],[data-del],[data-terminal],[data-wire]'))return;
  const target=e.target.closest('[data-drag]');
  if(!target)return;
  const svg=target.ownerSVGElement,point=circuitPoint(e,svg),id=target.dataset.drag,origin=cpos[ci][id];
@@ -672,7 +686,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
@@ -684,6 +698,7 @@ document.addEventListener('click',e=>{
  if(t.dataset.pot){const c=C[ci].components.find(x=>x.id===t.dataset.pot),P=[10,25,50,75,90],k=P.indexOf(c.pos||50);c.pos=P[(k+1)%P.length];circuitPaint();return}
  if(t.id==='cundo'){cw.pop();wireDraft=null;circuitPaint();return}
  if(t.id==='cdis'){ccap={};circuitPaint();return}
+ if(t.dataset.cycle){const c=C[ci].components.find(x=>x.id===t.dataset.cycle),cycle=c&&CYCLES[c.type];if(c&&cycle){const k=cycle.values.indexOf(Number(c[cycle.key]??cycle.values[0]));c[cycle.key]=cycle.values[(k+1)%cycle.values.length];$('cmsg').textContent='';circuitPaint()}return}
  if(t.dataset.res){const c=C[ci].components.find(x=>x.id===t.dataset.res),k=c.rs.indexOf(c.r||100);c.r=c.rs[(k+1)%c.rs.length];$('cmsg').textContent='';circuitPaint();return}
  if(t.dataset.fix){delete cblown[ci+t.dataset.fix];circuitPaint();return}
  if(t.id==='chint'){chint();return}
@@ -694,6 +709,9 @@ document.addEventListener('click',e=>{
  if(t.dataset.shload){try{sbImport($('cshtxt').value);$('cmsg').textContent='Wczytano układ. Poprzedni przywrócisz przyciskiem „Cofnij wczytanie”.'}catch(err){$('cmsg').textContent=typeof err==='string'?err:'Nie udało się wczytać układu.'}return}
  if(t.dataset.shundo){if(!sbPrev){$('cmsg').textContent='Nie ma czego cofać.';return}try{sbImport(sbPrev,true);$('cmsg').textContent='Przywrócono poprzedni układ.'}catch(err){$('cmsg').textContent='Nie udało się przywrócić układu.'}return}
 
+ if(t.dataset.zin){zoomAt(.8);return}
+ if(t.dataset.zout){zoomAt(1.25);return}
+ if(t.dataset.zfit){view.x=0;view.y=0;view.w=700;view.h=360;applyView();return}
  if(t.dataset.mpopen){mp.show=!mp.show;$('cmp').hidden=!(mp.show||mp.on);return}
  if(t.dataset.mphost){mpHost();return}
  if(t.dataset.mpjoin){mpJoin($('cmpcode').value.trim().toLowerCase());return}
@@ -719,8 +737,8 @@ document.addEventListener('click',e=>{
  if(t.dataset.switch){cclosed=!cclosed;$('cmsg').textContent='';circuitPaint();return}
  if(t.dataset.canvas!==undefined&&wireDraft){
   const svg=t.ownerSVGElement||t,rect=svg.getBoundingClientRect();
-  const x=Math.max(20,Math.min(680,Math.round((e.clientX-rect.left)*700/rect.width/20)*20));
-  const y=Math.max(20,Math.min(340,Math.round((e.clientY-rect.top)*360/rect.height/20)*20));
+  const x=Math.max(20,Math.min(680,Math.round((view.x+(e.clientX-rect.left)*view.w/rect.width)/20)*20));
+  const y=Math.max(20,Math.min(340,Math.round((view.y+(e.clientY-rect.top)*view.h/rect.height)/20)*20));
   const last=wireDraft.points[wireDraft.points.length-1]||circuitNodes().find(n=>n.id===wireDraft.from);
   if(Math.abs(x-last.x)+Math.abs(y-last.y)>=20){wireDraft.points.push({x,y});circuitPaint()}
   return;
@@ -732,7 +750,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
@@ -749,8 +767,21 @@ setInterval(()=>{if(cpd||!cw.length||!C[ci].components.some(c=>c.type==='capacit
  C[ci].components.forEach(c=>{if(c.type==='capacitor'){const v=S.cs[c.id]||0,o=ccap[ci+c.id]||0;if(Math.abs(v-o)>2e-4)ch=1;ccap[ci+c.id]=v}});if(ch)circuitPaint()},60);
 if(SBP){document.body.classList.add('sbmode');document.title='Piaskownica – Obwody';ci=SB;sbHash();addEventListener('hashchange',sbHash)}
 if(SBP){roomHash();addEventListener('hashchange',roomHash)}
+$('cwrap').addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(Math.max(-200,Math.min(200,e.deltaY))*.0012),e.clientX,e.clientY)},{passive:false});
+let pan=null;const tpt=new Map();let pinchD=0;
+$('cboard').addEventListener('pointerdown',e=>{
+ if(e.pointerType==='touch'){tpt.set(e.pointerId,[e.clientX,e.clientY]);if(tpt.size===2){pan=null;const[a,b]=[...tpt.values()];pinchD=Math.hypot(a[0]-b[0],a[1]-b[1])}}
+ const bg=e.target.closest&&e.target.closest('[data-canvas]');if(!(e.button===1||(e.button===0&&bg)))return;
+ const sv=$('cboard').querySelector('svg');if(!sv)return;if(e.button===1)e.preventDefault();
+ if(tpt.size<2)pan={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y,moved:false,r:sv.getBoundingClientRect()}});
+document.addEventListener('pointermove',e=>{
+ if(e.pointerType==='touch'&&tpt.has(e.pointerId)){tpt.set(e.pointerId,[e.clientX,e.clientY]);if(tpt.size===2){const[a,b]=[...tpt.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pinchD>0&&d>0){zoomAt(pinchD/d,(a[0]+b[0])/2,(a[1]+b[1])/2);pinchD=d}return}}
+ if(!pan)return;const dx=e.clientX-pan.x,dy=e.clientY-pan.y;if(!pan.moved&&Math.abs(dx)+Math.abs(dy)<5)return;
+ pan.moved=true;view.x=pan.vx-dx*view.w/pan.r.width;view.y=pan.vy-dy*view.h/pan.r.height;clampView();applyView();$('cboard').classList.add('panning')});
+const endPan=e=>{tpt.delete(e.pointerId);if(tpt.size<2)pinchD=0;if(pan&&pan.moved){skipCircuitClick=true;setTimeout(()=>{skipCircuitClick=false},60)}pan=null;$('cboard').classList.remove('panning')};
+document.addEventListener('pointerup',endPan);document.addEventListener('pointercancel',endPan);
 document.addEventListener('pointerup',()=>setTimeout(()=>{if(mp.pend&&!cdrag){const c=mp.pend;mp.pend=null;mp.last=c;try{sbRemote(c)}catch(e){}}},0));
 $('cboard').addEventListener('pointermove',e=>{if(!mp.on)return;const now=Date.now();if(now-mp.tc<60)return;mp.tc=now;
- const sv=$('cboard').querySelector('svg');if(!sv)return;const r=sv.getBoundingClientRect(),x=Math.round((e.clientX-r.left)/r.width*700),y=Math.round((e.clientY-r.top)/r.height*360);
+ const sv=$('cboard').querySelector('svg');if(!sv)return;const r=sv.getBoundingClientRect(),x=Math.round(view.x+(e.clientX-r.left)/r.width*view.w),y=Math.round(view.y+(e.clientY-r.top)/r.height*view.h);
  if(mp.role==='host')mpSend({t:'cur',id:'host',x,y});else if(mp.conns.host&&mp.conns.host.open)mp.conns.host.send(JSON.stringify({t:'cur',x,y}))});
 circuitPaint();</script></body></html>
