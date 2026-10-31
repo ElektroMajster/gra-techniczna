@@ -26,7 +26,7 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #lv{display:flex;gap:6px;flex-wrap:wrap}
 #lv button{width:46px;padding:3px 0;line-height:1.2}
 #lv small{color:var(--ac);font-size:11px}
-#mode{display:flex;gap:6px}
+#mode{display:flex;flex-wrap:wrap;gap:6px}
 .navlink{display:inline-block;text-decoration:none;color:var(--tx);background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:6px 10px}
 .navlink:hover{border-color:var(--tx)}
 .navlink.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:700}
@@ -110,6 +110,11 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .circuit .term.hint{fill:var(--ac);animation:pu .5s ease-in-out infinite alternate}
 #cread{min-height:24px;margin-bottom:8px}
 @media(prefers-reduced-motion:reduce){.circuit .wire.live,.circuit .spin,.circuit .pulse,.circuit .term.hint{animation:none}}
+html{max-width:100%;overflow-x:hidden}
+#cboard{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:760px){main{padding:10px}header{gap:8px}h1{font-size:26px}.navlink{padding:5px 8px}}
+.circuit .drag-part{cursor:grab}
+.circuit .drag-part,.circuit .term{touch-action:none}
 </style></head><body>
 <main>
 <header><h1>Obwody – podstawy</h1><nav id="mode" aria-label="Tryb gry"><a class="navlink" href="index.html">Rejestr</a><a class="navlink p" href="obwody-podstawy.html">Obwody – podstawy</a><a class="navlink" href="piaskownica.html">Obwody - piaskownica</a><a class="navlink" href="gra_samolotowa.html">Samolot</a></nav></header>
@@ -397,7 +402,7 @@ function circuitPaint(){if(C[ci].link){const u=C[ci].link;ci=Math.max(0,ci-1);cw
  for(const c of C[ci].components){
   const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Rezystor '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='photodiode'?'Fotodioda':type==='diac'?'DIAC':type==='capacitor'?(c.polarized?'Kondensator + ':'Kondensator ')+(c.c||470)+' µF':type==='inductor'?'Cewka '+((c.l||.047)*1000)+' mH':type==='choke'?'Dławik '+((c.l||.047)*1000)+' mH':type==='transistor'?'Tranzystor NPN':type==='pnp'?'Tranzystor PNP':type==='mosfet'?'N-MOSFET':type==='pmos'?'P-MOSFET':type==='jfet'?'JFET N-kanałowy':type==='pjfet'?'JFET P-kanałowy':type==='ntc'?'Termistor NTC '+(c.r||1000)+' Ω':type==='ptc'?'Termistor PTC '+(c.r||100)+' Ω':type==='thyristor'?'Tyrystor SCR':type==='varistor'?'Warystor '+(c.vz||6)+' V':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':type==='zener'?'Dioda Zenera '+(c.vz||5.1)+' V':type==='schottky'?'Dioda Schottky':type==='cell'?(c.e>3?'Bateria ':'Ogniwo ')+String(c.e).replace('.',',')+' V':type==='spdt'?'Przełącznik SPDT':type==='seg7'?(c.ca?'7-seg wsp. anoda':'7-seg wsp. katoda'):type==='pot'?'Potencjometr '+(c.r||1000)+' Ω':type==='relay'?'Przekaźnik':type==='ldr'?'Fotorezystor':type==='toggle'?'Przełącznik':`LED ${c.colorName||''}`;
   const start=svg.length;
-  svg+=`<g data-drag="${id}" class="drag-part">`;
+  svg+=`<g data-drag="${id}" class="drag-part"><rect x="${x-36}" y="${y-(type==='seg7'?48:34)}" width="72" height="${type==='seg7'?96:68}" fill="transparent" pointer-events="all"/>`;
   svg+=`<g transform="rotate(${angle} ${x} ${y})">`;
   if(type==='lamp')svg+=glow(S.b[id],'#ffd43b',x,y)+`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-11} ${y-11}L${x+11} ${y+11}M${x+11} ${y-11}L${x-11} ${y+11}" class="sym"/>`;
   else if(type==='resistor')svg+=`<rect x="${x-24}" y="${y-13}" width="48" height="26" class="part"/>`+(c.rs?`<rect x="${x-24}" y="${y-13}" width="48" height="26" fill="transparent" data-res="${id}" tabindex="0" role="button" aria-label="Zmień wartość rezystora" style="cursor:pointer"/>`:'');

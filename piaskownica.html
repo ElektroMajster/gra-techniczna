@@ -26,7 +26,7 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 #lv{display:flex;gap:6px;flex-wrap:wrap}
 #lv button{width:46px;padding:3px 0;line-height:1.2}
 #lv small{color:var(--ac);font-size:11px}
-#mode{display:flex;gap:6px}
+#mode{display:flex;flex-wrap:wrap;gap:6px}
 .navlink{display:inline-block;text-decoration:none;color:var(--tx);background:var(--pn);border:1px solid var(--ln);border-radius:4px;padding:6px 10px}
 .navlink:hover{border-color:var(--tx)}
 .navlink.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:700}
@@ -159,6 +159,12 @@ body.sbmode{height:100vh;overflow:hidden}
 .circuit .term.hint{fill:var(--ac);animation:pu .5s ease-in-out infinite alternate}
 #cread{min-height:24px;margin-bottom:8px}
 @media(prefers-reduced-motion:reduce){.circuit .wire.live,.circuit .spin,.circuit .pulse,.circuit .term.hint{animation:none}}
+html{max-width:100%;overflow-x:hidden}
+#cboard{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:760px){main{padding:10px}header{gap:8px}h1{font-size:26px}.navlink{padding:5px 8px}}
+.sbmode .circuit svg{min-width:0}
+.sbmode #cboard{overflow:visible}
+@media(max-width:900px){body.sbmode{overflow-x:hidden;overflow-y:auto}.sbmode header{flex-wrap:wrap}.sbmode #cwrap{overflow:hidden}}
 </style></head><body class="sbmode">
 <main>
 <header><h1>Obwody</h1><nav id="mode" aria-label="Tryb gry"><a class="navlink" href="index.html">Rejestr</a><a class="navlink" href="obwody-podstawy.html">Obwody – podstawy</a><a class="navlink p" href="piaskownica.html">Obwody - piaskownica</a><a class="navlink" href="gra_samolotowa.html">Samolot</a></nav></header>
