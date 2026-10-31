@@ -502,7 +502,7 @@ function mpJoin(code){
 function roomHash(){const m=/#room=([a-z0-9]{5})(?![a-z0-9])/.exec(location.hash);if(!m)return;
  ci=SB;mp.show=1;circuitPaint();$('cmpcode').value=m[1];mpJoin(m[1]);try{history.replaceState(null,'',location.href.split('#')[0])}catch(e){}}
 const view={x:0,y:0,w:700,h:360};
-function clampView(){view.x=Math.max(-view.w*.8,Math.min(700-view.w*.2,view.x));view.y=Math.max(-view.h*.8,Math.min(360-view.h*.2,view.y))}
+function clampView(){view.x=Math.max(-3000,Math.min(3700-view.w,view.x));view.y=Math.max(-3000,Math.min(3360-view.h,view.y))}
 function applyView(){const v=view.x+' '+view.y+' '+view.w+' '+view.h,sv=$('cboard').querySelector('svg');if(sv)sv.setAttribute('viewBox',v);$('ccur').setAttribute('viewBox',v);$('czv').textContent=Math.round(700/view.w*100)+'%'}
 function zoomAt(f,cx,cy){const sv=$('cboard').querySelector('svg');if(!sv)return;const r=sv.getBoundingClientRect(),
  px=cx==null?.5:(cx-r.left)/r.width,py=cy==null?.5:(cy-r.top)/r.height,nw=Math.max(175,Math.min(1750,view.w*f)),nh=nw*360/700;
@@ -516,7 +516,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
  $('ctask').textContent=`Układ ${ci+1}: ${C[ci].task}`;
  $('cvolt').value=String(cvolt[ci]);
- let svg=`<svg viewBox="${view.x} ${view.y} ${view.w} ${view.h}" role="img" aria-label="Interaktywny schemat obwodu elektrycznego"><defs><pattern id="sbgrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" style="stroke:var(--gr)"/></pattern></defs><rect x="-3000" y="-3000" width="6700" height="6360" fill="url(#sbgrid)" pointer-events="none"/><rect width="700" height="360" fill="none" stroke-dasharray="6 6" pointer-events="none" style="stroke:var(--ln)"/><rect x="-3000" y="-3000" width="6700" height="6360" fill="transparent" data-canvas="true"/><text x="130" y="35" class="ct" text-anchor="middle">Bateria</text><text x="130" y="57" class="voltage" text-anchor="middle">U = ${cvolt[ci].toFixed(1)} V</text><text x="130" y="110" class="ct" text-anchor="middle">+</text><text x="130" y="295" class="ct" text-anchor="middle">−</text><line x1="130" y1="125" x2="130" y2="170" class="sym"/><line x1="105" y1="170" x2="155" y2="170" class="sym"/><line x1="115" y1="195" x2="145" y2="195" class="sym"/><line x1="130" y1="195" x2="130" y2="265" class="sym"/>`;
+ let svg=`<svg viewBox="${view.x} ${view.y} ${view.w} ${view.h}" role="img" aria-label="Interaktywny schemat obwodu elektrycznego"><defs><pattern id="sbgrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" style="stroke:var(--gr)"/></pattern></defs><rect x="-3000" y="-3000" width="6700" height="6360" fill="url(#sbgrid)" pointer-events="none"/><rect x="-3000" y="-3000" width="6700" height="6360" fill="transparent" data-canvas="true"/><text x="130" y="35" class="ct" text-anchor="middle">Bateria</text><text x="130" y="57" class="voltage" text-anchor="middle">U = ${cvolt[ci].toFixed(1)} V</text><text x="130" y="110" class="ct" text-anchor="middle">+</text><text x="130" y="295" class="ct" text-anchor="middle">−</text><line x1="130" y1="125" x2="130" y2="170" class="sym"/><line x1="105" y1="170" x2="155" y2="170" class="sym"/><line x1="115" y1="195" x2="145" y2="195" class="sym"/><line x1="130" y1="195" x2="130" y2="265" class="sym"/>`;
  for(let i=0;i<cw.length;i++){
   const w=cw[i],a=byId[w.from],b=byId[w.to];
   if(a&&b){const pts=routePoints(a,b,w.points),d=pathOf(pts);
@@ -711,7 +711,7 @@ document.addEventListener('pointermove',e=>{
  if(!cdrag.moved&&Math.hypot(dx,dy)<4)return;
  cdrag.moved=true;
  const snap=value=>Math.round(value/10)*10;
- cpos[ci][cdrag.id]={x:Math.max(210,Math.min(660,snap(cdrag.origin.x+dx))),y:Math.max(75,Math.min(295,snap(cdrag.origin.y+dy)))};
+ cpos[ci][cdrag.id]={x:Math.max(-2800,Math.min(3600,snap(cdrag.origin.x+dx))),y:Math.max(-2800,Math.min(3260,snap(cdrag.origin.y+dy)))};
  circuitPaint();
 });
 document.addEventListener('pointerup',()=>{
