@@ -75,6 +75,16 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .t.big{font-size:28px;font-weight:700}
 .circuit{margin:12px 0}
 .circuit nav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+#clv{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px;align-items:start}
+.level-group{min-width:0;border:1px solid var(--ln);border-radius:5px;background:var(--bg);overflow:hidden}
+.level-group-toggle{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;text-align:left;border:0;border-radius:0;font-weight:700}
+.level-group-toggle small{color:var(--mu);font-weight:400;white-space:nowrap}
+.level-group-toggle .level-chevron{color:var(--ac);transition:transform .15s ease}
+.level-group-toggle[aria-expanded="true"] .level-chevron{transform:rotate(180deg)}
+.level-list{display:flex;flex-wrap:wrap;gap:5px;padding:0 7px 7px}
+.level-list[hidden]{display:none}
+.level-list button{font-size:12px;padding:5px 8px}
+@media(max-width:600px){#clv{grid-template-columns:1fr}}
 .circuit svg{display:block;width:100%;min-width:640px;height:auto;touch-action:manipulation}
 .circuit .wire{stroke:var(--ac);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:stroke;cursor:pointer}
 .circuit .wire:hover{stroke-width:7}
@@ -226,10 +236,32 @@ const C=[
  {name:'Oscyloskop: napięcie stałe',difficulty:'easy',voltage:5,task:'Podłącz oba przewody oscyloskopu do biegunów baterii. Zobacz na ekranie płaską linię odpowiadającą napięciu stałemu 5 V.',components:[{id:'os1',type:'oscilloscope',x:430,y:185}],requiredWires:[['bp','os1a'],['bn','os1b']],ok:S=>S.v.os1>4.5},
  {name:'Oscyloskop: ładowanie kondensatora',difficulty:'hard',voltage:5,task:'Zbuduj obwód RC: bateria 5 V, rezystor 100 Ω i kondensator 1000 µF połączone szeregowo. Podłącz oscyloskop równolegle do kondensatora i obserwuj narastanie napięcia na ekranie.',components:[{id:'r1',type:'resistor',r:100,x:290,y:185},{id:'c1',type:'capacitor',c:1000,x:440,y:185},{id:'os1',type:'oscilloscope',x:570,y:185}],requiredWires:[['bp','r1a'],['r1b','c1a'],['c1b','bn'],['c1a','os1a'],['c1b','os1b']]}
 ];
-let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false);
+const LEVEL_GROUPS=[
+ {id:'basics',name:'Podstawy i połączenia',levels:[0,1,2,3,4,5,7,11,12,22,53]},
+ {id:'measurements',name:'Rezystory, napięcie i pomiary',levels:[19,20,21,24,25,26,28,30,31,52]},
+ {id:'diodes',name:'Diody i zabezpieczenia',levels:[6,8,9,10,13,14,23,32,34,46,54,64,65]},
+ {id:'energy',name:'Kondensatory i cewki',levels:[15,16,58,59,60]},
+ {id:'transistors',name:'Tranzystory i sterowanie',levels:[17,18,27,33,39,41,42,44,45,47,49,55,56,57]},
+ {id:'sensors',name:'Czujniki',levels:[29,36,37,40,43,48,62,63]},
+ {id:'logic',name:'Logika i wyświetlacze',levels:[35,50,51]},
+ {id:'workshop',name:'Pracownia i eksperymenty',levels:[38,61]},
+ {id:'oscilloscope',name:'Oscyloskop',levels:[66,67]}
+];
+let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false),openLevelGroup='basics';
 const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,y:c.y}])));
 const crot=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,0])));
 const cvolt=C.map(level=>level.voltage||3);
+function renderLevelNavigation(){
+ $('clv').innerHTML=LEVEL_GROUPS.map(group=>{
+  const expanded=group.id===openLevelGroup,done=group.levels.filter(i=>csolved[i]).length;
+  const levels=group.levels.map(i=>{
+   const level=C[i];
+   return `<button data-clevel="${i}" class="${i===ci?'p':''}" title="${level.difficulty==='easy'?'Łatwy':'Trudny'}" aria-current="${i===ci?'step':'false'}">${i+1}. ${level.name}${csolved[i]?' ★':''}</button>`;
+  }).join('');
+  return `<section class="level-group"><button type="button" class="level-group-toggle" data-level-group="${group.id}" aria-expanded="${expanded}"><span>${group.name}</span><small>${done}/${group.levels.length}</small><span class="level-chevron" aria-hidden="true">⌄</span></button><div class="level-list"${expanded?'':' hidden'}>${levels}</div></section>`;
+ }).join('');
+}
+const levelGroupFor=index=>LEVEL_GROUPS.find(group=>group.levels.includes(index));
 const circuitNodes=()=>[
  {id:'bp',x:130,y:125,label:'+'},{id:'bn',x:130,y:265,label:'−'},
  ...C[ci].components.flatMap(c=>{
@@ -410,7 +442,7 @@ function chint(){const lv=C[ci],sol=lv.sol||lv.requiredWires;
 function circuitPaint(){if(C[ci].link){const u=C[ci].link;ci=Math.max(0,ci-1);cw=[];let w=null;try{w=window.open(u,'_blank')}catch(e){}
  if(w){try{w.opener=null}catch(e){}}else{const m=$('cmsg');m.textContent='Przeglądarka zablokowała nową kartę. ';const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';a.textContent='Otwórz piaskownicę';m.append(a)}}
  const nodes=circuitNodes(),byId=Object.fromEntries(nodes.map(n=>[n.id,n])),S=sim(false);
- $('clv').innerHTML=C.map((x,i)=>`<button data-clevel="${i}" class="${i==ci?'p':''}" title="${x.difficulty==='easy'?'Łatwy':'Trudny'}">${i+1}. ${x.name}${csolved[i]?' ★':''}</button>`).join('');
+ renderLevelNavigation();
  $('ctask').textContent=`Układ ${ci+1}: ${C[ci].task}`;
  $('cvolt').value=String(cvolt[ci]);
  let svg=`<svg viewBox="0 0 700 360" role="img" aria-label="Interaktywny schemat obwodu elektrycznego"><rect width="700" height="360" fill="transparent" data-canvas="true"/><text x="130" y="35" class="ct" text-anchor="middle">Bateria</text><text x="130" y="57" class="voltage" text-anchor="middle">U = ${cvolt[ci].toFixed(1)} V</text><text x="130" y="110" class="ct" text-anchor="middle">+</text><text x="130" y="295" class="ct" text-anchor="middle">−</text><line x1="130" y1="125" x2="130" y2="170" class="sym"/><line x1="105" y1="170" x2="155" y2="170" class="sym"/><line x1="115" y1="195" x2="145" y2="195" class="sym"/><line x1="130" y1="195" x2="130" y2="265" class="sym"/>`;
@@ -632,13 +664,14 @@ document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
  const component=e.target.closest('[data-drag]');
  if(component&&C[ci].components.find(c=>c.id===component.dataset.drag)?.type==='oscilloscope'){openScope(component.dataset.drag);return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-clevel],[data-level-group],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
- if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
+ if(t.dataset.levelGroup){openLevelGroup=openLevelGroup===t.dataset.levelGroup?'':t.dataset.levelGroup;renderLevelNavigation();return}
+ if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;openLevelGroup=levelGroupFor(ci).id;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
   const difficulty=$('cdiff').value,available=C.map((level,index)=>({level,index})).filter(x=>!x.level.link&&(difficulty==='any'||x.level.difficulty===difficulty));
   const choices=available.filter(x=>x.index!==ci),pool=choices.length?choices:available,choice=pool[Math.floor(Math.random()*pool.length)];
-  ci=choice.index;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return;
+  ci=choice.index;openLevelGroup=levelGroupFor(ci).id;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return;
  }
  if(t.dataset.tog){const k=ci+t.dataset.tog;ctog[k]=!ctog[k];$('cmsg').textContent='';circuitPaint();return}
  if(t.dataset.pot){const c=C[ci].components.find(x=>x.id===t.dataset.pot),P=[10,25,50,75,90],k=P.indexOf(c.pos||50);c.pos=P[(k+1)%P.length];circuitPaint();return}
@@ -673,7 +706,7 @@ document.addEventListener('click',e=>{
  if(t.id==='ccheck'){checkCircuit();return}
  if(t.id==='ccancel'){wireDraft=null;circuitPaint();return}
  if(t.id==='cclear'){cblown={};ccap={};cind={};C[ci].components.filter(c=>c.type==='thyristor').forEach(c=>delete cthyristor[ci+c.id]);cw=[];wireDraft=null;$('cmsg').textContent='';circuitPaint();return}
- if(t.id==='cnext'){ci=Math.min(ci+1,C.length-1);cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint()}
+ if(t.id==='cnext'){ci=Math.min(ci+1,C.length-1);openLevelGroup=levelGroupFor(ci).id;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint()}
 });
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
