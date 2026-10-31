@@ -98,6 +98,19 @@ body.sbmode{height:100vh;overflow:hidden}
 .sbmode #cpal{grid-column:1/3;grid-row:1;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;gap:0;margin:0;background:var(--pn);border-bottom:1px solid var(--ln)}
 .sbmode #cpal button{padding:3px 8px;font-size:12px;white-space:nowrap}
 .sbmode .pg.act{margin-left:auto;border-right:0;border-left:1px solid var(--ln)}
+.sbmode #cpal{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+.sb-tabs{display:flex;gap:4px;padding:4px 8px;border-bottom:1px solid var(--ln);background:var(--pn)}
+.sb-tabs button{padding:4px 12px}
+.sb-tabs button[aria-selected="true"]{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:700}
+.sb-panel{min-width:0;min-height:0}
+.sbmode #sb-elements{display:flex;flex-wrap:nowrap;overflow-x:auto;align-items:stretch;gap:0}
+#sb-tasks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;padding:8px;overflow:auto;max-height:230px}
+#sb-tasks[hidden],#sb-elements[hidden]{display:none}
+.sb-task{min-width:0;padding:9px 10px;border:1px solid var(--ln);border-radius:5px;background:var(--bg)}
+.sb-task h3{margin:0 0 4px;font:700 14px/1.3 system-ui,sans-serif}
+.sb-task p{margin:0 0 5px;font-size:12px}
+.sb-task .sb-materials{color:var(--mu)}
+.sb-task button{margin-top:3px}
 .sbmode #cwrap{grid-column:1;grid-row:3;overflow:auto}
 .sbmode #cside{grid-column:2;grid-row:2/4;overflow:auto;display:flex;flex-direction:column;background:var(--pn);border-left:1px solid var(--ln)}
 .sbmode #cside>div{padding:8px 10px;border-bottom:1px solid var(--ln);margin:0}
@@ -411,15 +424,39 @@ const PAL=[['Żarówka',{type:'lamp'}],['LED czerwona',{type:'led',color:'#e0313
  ['MOSFET P',{type:'pmos'}],['JFET N',{type:'jfet'}],['JFET P',{type:'pjfet'}],['Termistor NTC',{type:'ntc',r:1000,rs:CYCLES.ntc.values}],['Termistor PTC',{type:'ptc',r:100,rs:CYCLES.ptc.values}],['Dławik',{type:'choke',l:.047}],['Cewka indukcyjna',{type:'inductor',l:.047}],['Fotodioda',{type:'photodiode'}],['DIAC',{type:'diac',vt:6}],['Oscyloskop',{type:'oscilloscope'}]];
 const PFX={lamp:'l',led:'d',diode:'d',photodiode:'pd',diac:'da',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',inductor:'i',choke:'ch',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v',oscilloscope:'os',schottky:'sd',cell:'e',spdt:'w',seg7:'x',pmos:'q',jfet:'q',pjfet:'q',ntc:'nt',ptc:'pt'};
 const GR=[['Zasilanie',[29,30]],['Odbiorniki',[0,1,2,3,4,26,8,9]],['Wyświetlacze',[32,33]],['Rezystory i czujniki',[5,6,7,37,38]],['Kondensatory',[17,18]],['Cewki',[39,40]],['Sterowanie',[10,11,31,12,13,23]],['Półprzewodniki',[14,27,15,28,16,19,20,21,34,35,36,22,41,42]],['Pomiary',[24,25,43]]];
-$('cpal').innerHTML=GR.map(([n,ix])=>`<div class="pg"><span class="pgl">${n}</span><div class="pgb">${ix.map(i=>`<button data-add="${i}">${PAL[i][0]}</button>`).join('')}</div></div>`).join('')+'<div class="pg act"><span class="pgl">Plik i gra</span><div class="pgb"><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button><button data-sbclear="1">Wyczyść planszę</button></div></div>';
+const SB_TASKS=[
+ {title:'LED z rezystorem',goal:'Ustaw zasilanie planszy na 5 V. Zbuduj bezpieczny obwód szeregowy: plus → rezystor → czerwona LED → minus. Ustaw anodę LED od strony plusa. Sprawdź, jak zmienia się prąd po zmianie rezystora.',parts:'Zasilanie planszy: 5 V · rezystor · czerwona LED',kit:[5,1]},
+ {title:'Dzielnik napięcia',goal:'Ustaw zasilanie na 5 V. Połącz dwa rezystory szeregowo między biegunami baterii. Podłącz woltomierz równolegle do jednego rezystora i porównaj odczyt z napięciem zasilania.',parts:'Zasilanie planszy: 5 V · 2 rezystory · woltomierz',kit:[5,5,25]},
+ {title:'Ładowanie kondensatora',goal:'Ustaw zasilanie na 5 V. Połącz szeregowo źródło z planszy, rezystor i kondensator. Podłącz oscyloskop równolegle do kondensatora. Obserwuj narastanie napięcia i zmień pojemność kondensatora.',parts:'Zasilanie planszy: 5 V · rezystor · kondensator · oscyloskop',kit:[5,17,43]},
+ {title:'Tranzystor jako przełącznik',goal:'Ustaw zasilanie na 5 V. Zbuduj sterowanie żarówką tranzystorem NPN: emiter do minusa, żarówka między plusem a kolektorem, a baza przez rezystor i przełącznik do plusa.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · rezystor · przełącznik · żarówka',kit:[19,5,11,0]},
+ {title:'Czujnik światła',goal:'Ustaw zasilanie na 5 V. Połącz szeregowo źródło z planszy, fotorezystor, rezystor i czerwoną LED. Zmieniaj suwak światła i obserwuj wpływ jasności na prąd oraz świecenie LED.',parts:'Zasilanie planszy: 5 V · fotorezystor · rezystor · czerwona LED',kit:[7,5,1]},
+ {title:'DIAC i próg napięcia',goal:'Ustaw zasilanie na 9 V. Połącz źródło z planszy, rezystor, DIAC i żarówkę szeregowo. Zmieniaj napięcie baterii oraz próg DIAC i sprawdź, kiedy element zacznie przewodzić.',parts:'Zasilanie planszy: 9 V · rezystor · DIAC · żarówka',kit:[5,42,0]},
+ {title:'Dwie żarówki równolegle',goal:'Ustaw zasilanie na 5 V i podłącz każdą żarówkę osobną gałęzią między plusem a minusem. Porównaj jasność z połączeniem szeregowym.',parts:'Zasilanie planszy: 5 V · 2 żarówki',kit:[0,0]},
+ {title:'Dwie gałęzie LED',goal:'Ustaw zasilanie na 5 V. Zbuduj dwie gałęzie równoległe, każdą z własnym rezystorem i LED połączonymi szeregowo. Zwróć uwagę, że każda LED ma własne ograniczenie prądu.',parts:'Zasilanie planszy: 5 V · 2 rezystory · czerwona i zielona LED',kit:[5,1,5,2]},
+ {title:'Dioda przewodzi w jedną stronę',goal:'Ustaw zasilanie na 3 V. Połącz szeregowo źródło, diodę i żarówkę. Zmień kierunek podłączenia diody i sprawdź, kiedy obwód przewodzi.',parts:'Zasilanie planszy: 3 V · dioda · żarówka',kit:[14,0]},
+ {title:'Bezpiecznik w obwodzie',goal:'Ustaw zasilanie na 5 V i włącz bezpiecznik szeregowo z rezystorem oraz żarówką. Obserwuj, jak zmiana rezystancji wpływa na prąd płynący przez bezpiecznik.',parts:'Zasilanie planszy: 5 V · bezpiecznik · rezystor · żarówka',kit:[13,5,0]},
+ {title:'Potencjometr jako dzielnik',goal:'Ustaw zasilanie na 9 V. Połącz końce potencjometru z plusem i minusem, a woltomierz między suwak W i minus. Klikaj potencjometr, aby zmieniać napięcie wyjściowe.',parts:'Zasilanie planszy: 9 V · potencjometr · woltomierz',kit:[6,25]},
+ {title:'Termistor NTC',goal:'Ustaw zasilanie na 5 V. Połącz termistor NTC szeregowo z rezystorem i żarówką. Zmieniaj temperaturę suwakiem i obserwuj zmianę rezystancji oraz prądu.',parts:'Zasilanie planszy: 5 V · termistor NTC · rezystor · żarówka',kit:[37,5,0]},
+ {title:'Przekaźnik sterowany przyciskiem',goal:'Ustaw zasilanie na 5 V. Zbuduj obwód sterujący: plus przez przycisk do cewki przekaźnika, a drugi koniec cewki do minusa. W osobnym obwodzie połącz styki przekaźnika z żarówką i obserwuj działanie podczas przytrzymania przycisku.',parts:'Zasilanie planszy: 5 V · przekaźnik · przycisk · żarówka',kit:[23,12,0]},
+ {title:'Fotodioda reaguje na światło',goal:'Ustaw zasilanie na 5 V. Połącz fotodiodę, rezystor i amperomierz w obwód szeregowy. Zmieniaj jasność suwakiem i obserwuj, jak zmienia się prąd. Jeśli odczyt jest bliski zeru, odwróć fotodiodę.',parts:'Zasilanie planszy: 5 V · fotodioda · rezystor · amperomierz',kit:[41,5,24]},
+ {title:'Generator prostokątny — multiwibrator astabilny',goal:'Zbuduj klasyczny multiwibrator astabilny na dwóch tranzystorach NPN. Połącz emitery z minusem, w każdym kolektorze umieść rezystor do plusa, a każdą bazę podciągnij rezystorem do plusa. Dodaj kondensatory krzyżowo: kolektor pierwszego tranzystora przez kondensator do bazy drugiego i odwrotnie. Zmieniaj pojemność kondensatorów i przewidź, jak wpłynie na częstotliwość. To ćwiczenie montażowe — symulator nie odwzorowuje jeszcze samowzbudnych oscylacji.',parts:'Zasilanie planszy: 5 V · 2 tranzystory NPN · 4 rezystory · 2 kondensatory',kit:[19,19,5,5,5,5,17,17]},
+ {title:'Wzmacniacz audio — wspólny emiter',goal:'Zbuduj koncepcyjny stopień wzmacniacza na tranzystorze NPN. Zastosuj rezystor kolektorowy między plusem a kolektorem, rezystor emiterowy między emiterem a minusem oraz dzielnik polaryzujący bazę z dwóch rezystorów. Kondensator sprzęgający umieść na wejściu sygnału, a drugi między kolektorem a wyjściem do głośnika. Brzęczyk służy tu tylko jako symbol obciążenia — symulator nie modeluje jeszcze wzmocnienia ani sygnału audio.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · 4 rezystory · 2 kondensatory · brzęczyk',kit:[19,5,5,5,5,17,17,9]}
+];
+const taskCards=SB_TASKS.map((task,i)=>`<article class="sb-task"><h3>${i+1}. ${task.title}</h3><p>${task.goal}</p><p class="sb-materials">Elementy: ${task.parts}</p><button data-sbkit="${task.kit.join(',')}">Dodaj elementy do planszy</button></article>`).join('');
+$('cpal').innerHTML=`<nav class="sb-tabs" aria-label="Zawartość piaskownicy"><button type="button" data-sbtab="elements" aria-selected="true">Elementy</button><button type="button" data-sbtab="tasks" aria-selected="false">Zadania (${SB_TASKS.length})</button></nav><div id="sb-elements" class="sb-panel">${GR.map(([n,ix])=>`<div class="pg"><span class="pgl">${n}</span><div class="pgb">${ix.map(i=>`<button data-add="${i}">${PAL[i][0]}</button>`).join('')}</div></div>`).join('')}<div class="pg act"><span class="pgl">Plik i gra</span><div class="pgb"><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button><button data-sbclear="1">Wyczyść planszę</button></div></div></div><div id="sb-tasks" class="sb-panel" hidden>${taskCards}</div>`;
+function setSandboxTab(tab){
+ const tasks=tab==='tasks';
+ $('sb-elements').hidden=tasks;$('sb-tasks').hidden=!tasks;
+ document.querySelectorAll('[data-sbtab]').forEach(button=>button.setAttribute('aria-selected',String(button.dataset.sbtab===tab)));
+}
 function sbAdd(i){
  const comps=C[SB].components,def=JSON.parse(JSON.stringify(PAL[i][1])),used=new Set(comps.map(c=>c.id));
  let n=1;while(used.has(PFX[def.type]+n))n++;
  const id=PFX[def.type]+n,slots=[];
  [95,185,275].forEach(y=>[250,370,490,610].forEach(x=>slots.push({x,y})));[140,230].forEach(y=>[310,430,550].forEach(x=>slots.push({x,y})));
  const pos=slots.find(q=>!comps.some(c=>{const p=cpos[SB][c.id];return Math.abs(p.x-q.x)<100&&Math.abs(p.y-q.y)<65}));
- if(!pos){$('cmsg').textContent='Brak miejsca na planszy. Zaznacz element i usuń go albo przesuń istniejące elementy bliżej siebie.';return}
- comps.push({id,...def,x:pos.x,y:pos.y});cpos[SB][id]={...pos};crot[SB][id]=0;$('cmsg').textContent='';circuitPaint()}
+ if(!pos){$('cmsg').textContent='Brak miejsca na planszy. Zaznacz element i usuń go albo przesuń istniejące elementy bliżej siebie.';return false}
+ comps.push({id,...def,x:pos.x,y:pos.y});cpos[SB][id]={...pos};crot[SB][id]=0;$('cmsg').textContent='';circuitPaint();return true}
 function sbDel(id){
  const ts=new Set(circuitNodes().filter(n=>n.component===id).map(n=>n.id));
  cw=cw.filter(w=>!ts.has(w.from)&&!ts.has(w.to));
@@ -776,8 +813,14 @@ document.addEventListener('click',e=>{
  const component=e.target.closest('[data-drag]');
  if(component){selectSandboxComponent(component);if(C[ci].components.find(c=>c.id===component.dataset.drag)?.type==='oscilloscope')openScope(component.dataset.drag)}
  else if(ci===SB&&e.target.closest('[data-canvas]')&&!wireDraft)clearSandboxSelection();
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbtab],[data-sbkit],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
+ if(t.dataset.sbtab){setSandboxTab(t.dataset.sbtab);return}
+ if(t.dataset.sbkit!==undefined){
+  let added=0;for(const index of t.dataset.sbkit.split(',').map(Number)){if(!sbAdd(index))break;added++}
+  $('cmsg').textContent=added===t.dataset.sbkit.split(',').length?'Elementy dodane. Zbuduj obwód zgodnie z opisem zadania.':`Dodano ${added} z ${t.dataset.sbkit.split(',').length} elementów — na planszy zabrakło miejsca.`;
+  return;
+ }
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;clearSandboxSelection();$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
   const difficulty=$('cdiff').value,available=C.map((level,index)=>({level,index})).filter(x=>!x.level.sandbox&&(difficulty==='any'||x.level.difficulty===difficulty));
@@ -843,7 +886,7 @@ document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
  const scope=e.target.closest('[data-drag]');
  if(scope&&C[ci].components.find(c=>c.id===scope.dataset.drag)?.type==='oscilloscope'){e.preventDefault();openScope(scope.dataset.drag);return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbtab],[data-sbkit],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
