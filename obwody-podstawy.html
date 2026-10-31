@@ -75,16 +75,16 @@ button.p{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight
 .t.big{font-size:28px;font-weight:700}
 .circuit{margin:12px 0}
 .circuit nav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-#clv{display:block;margin:10px 0}
-.level-tabs{display:flex;gap:5px;overflow-x:auto;padding:2px 2px 8px;border-bottom:1px solid var(--ln);scrollbar-width:thin}
-.level-tab{display:flex;align-items:center;gap:7px;flex:none;white-space:nowrap}
-.level-tab small{color:var(--mu);font-size:11px}
-.level-tab[aria-selected="true"]{background:var(--tx);color:var(--bg);border-color:var(--tx);font-weight:700}
-.level-tab[aria-selected="true"] small{color:var(--bg)}
-.level-list{display:flex;flex-wrap:wrap;gap:6px;padding:10px 2px}
+#clv{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px;align-items:start}
+.level-group{min-width:0;border:1px solid var(--ln);border-radius:5px;background:var(--bg);overflow:hidden}
+.level-group-toggle{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;text-align:left;border:0;border-radius:0;font-weight:700}
+.level-group-toggle small{color:var(--mu);font-weight:400;white-space:nowrap}
+.level-group-toggle .level-chevron{color:var(--ac);transition:transform .15s ease}
+.level-group-toggle[aria-expanded="true"] .level-chevron{transform:rotate(180deg)}
+.level-list{display:flex;flex-wrap:wrap;gap:5px;padding:0 7px 7px}
+.level-list[hidden]{display:none}
 .level-list button{font-size:12px;padding:5px 8px}
-.level-list button[aria-current="step"]{box-shadow:inset 0 0 0 2px var(--ac)}
-@media(max-width:600px){.level-tabs{margin-right:-2px}.level-list{gap:5px}.level-list button{font-size:11px;padding:5px 7px}}
+@media(max-width:600px){#clv{grid-template-columns:1fr}}
 .circuit svg{display:block;width:100%;min-width:640px;height:auto;touch-action:manipulation}
 .circuit .wire{stroke:var(--ac);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:stroke;cursor:pointer}
 .circuit .wire:hover{stroke-width:7}
@@ -252,21 +252,14 @@ const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,
 const crot=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,0])));
 const cvolt=C.map(level=>level.voltage||3);
 function renderLevelNavigation(){
- const active=LEVEL_GROUPS.find(group=>group.id===openLevelGroup)||LEVEL_GROUPS[0];
- const tabs=LEVEL_GROUPS.map(group=>{
-  const done=group.levels.filter(i=>csolved[i]).length,selected=group.id===active.id;
-  return `<button type="button" class="level-tab" id="level-tab-${group.id}" data-level-group="${group.id}" role="tab" aria-selected="${selected}" aria-controls="level-panel" tabindex="${selected?0:-1}"><span>${group.name}</span><small>${done}/${group.levels.length}</small></button>`;
+ $('clv').innerHTML=LEVEL_GROUPS.map(group=>{
+  const expanded=group.id===openLevelGroup,done=group.levels.filter(i=>csolved[i]).length;
+  const levels=group.levels.map(i=>{
+   const level=C[i];
+   return `<button data-clevel="${i}" class="${i===ci?'p':''}" title="${level.difficulty==='easy'?'Łatwy':'Trudny'}" aria-current="${i===ci?'step':'false'}">${i+1}. ${level.name}${csolved[i]?' ★':''}</button>`;
+  }).join('');
+  return `<section class="level-group"><button type="button" class="level-group-toggle" data-level-group="${group.id}" aria-expanded="${expanded}"><span>${group.name}</span><small>${done}/${group.levels.length}</small><span class="level-chevron" aria-hidden="true">⌄</span></button><div class="level-list"${expanded?'':' hidden'}>${levels}</div></section>`;
  }).join('');
- const levels=active.levels.map(i=>{
-  const level=C[i];
-  return `<button data-clevel="${i}" class="${i===ci?'p':''}" title="${level.difficulty==='easy'?'Łatwy':'Trudny'}" aria-current="${i===ci?'step':'false'}">${i+1}. ${level.name}${csolved[i]?' ★':''}</button>`;
- }).join('');
- $('clv').innerHTML=`<div class="level-tabs" role="tablist" aria-label="Działy poziomów">${tabs}</div><div class="level-list" id="level-panel" role="tabpanel" aria-labelledby="level-tab-${active.id}">${levels}</div>`;
-}
-function selectLevelGroup(id,focus=false){
- if(!LEVEL_GROUPS.some(group=>group.id===id))return;
- openLevelGroup=id;renderLevelNavigation();
- if(focus)$(`level-tab-${id}`).focus();
 }
 const levelGroupFor=index=>LEVEL_GROUPS.find(group=>group.levels.includes(index));
 const circuitNodes=()=>[
@@ -673,7 +666,7 @@ document.addEventListener('click',e=>{
  if(component&&C[ci].components.find(c=>c.id===component.dataset.drag)?.type==='oscilloscope'){openScope(component.dataset.drag);return}
  const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-fix],[data-rotate],[data-clevel],[data-level-group],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
- if(t.dataset.levelGroup){selectLevelGroup(t.dataset.levelGroup);$(`level-tab-${t.dataset.levelGroup}`).focus();return}
+ if(t.dataset.levelGroup){openLevelGroup=openLevelGroup===t.dataset.levelGroup?'':t.dataset.levelGroup;renderLevelNavigation();return}
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;openLevelGroup=levelGroupFor(ci).id;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint();return}
  if(t.id==='crandom'){
   const difficulty=$('cdiff').value,available=C.map((level,index)=>({level,index})).filter(x=>!x.level.link&&(difficulty==='any'||x.level.difficulty===difficulty));
@@ -716,14 +709,6 @@ document.addEventListener('click',e=>{
  if(t.id==='cnext'){ci=Math.min(ci+1,C.length-1);openLevelGroup=levelGroupFor(ci).id;cw=[];wireDraft=null;cclosed=false;$('cmsg').textContent='';circuitPaint()}
 });
 document.addEventListener('keydown',e=>{
- const groupTab=e.target.closest('[data-level-group]');
- if(groupTab&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){
-  e.preventDefault();
-  const current=LEVEL_GROUPS.findIndex(group=>group.id===groupTab.dataset.levelGroup);
-  const next=e.key==='Home'?0:e.key==='End'?LEVEL_GROUPS.length-1:(current+(e.key==='ArrowRight'?1:-1)+LEVEL_GROUPS.length)%LEVEL_GROUPS.length;
-  selectLevelGroup(LEVEL_GROUPS[next].id,true);
-  return;
- }
  if(e.key!=='Enter'&&e.key!==' ')return;
  const scope=e.target.closest('[data-drag]');
  if(scope&&C[ci].components.find(c=>c.id===scope.dataset.drag)?.type==='oscilloscope'){e.preventDefault();openScope(scope.dataset.drag);return}
