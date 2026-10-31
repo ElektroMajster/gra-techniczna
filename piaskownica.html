@@ -442,7 +442,7 @@ const SB_TASKS=[
  {title:'Generator prostokątny — multiwibrator astabilny',goal:'Zbuduj klasyczny multiwibrator astabilny na dwóch tranzystorach NPN. Połącz emitery z minusem, w każdym kolektorze umieść rezystor do plusa, a każdą bazę podciągnij rezystorem do plusa. Dodaj kondensatory krzyżowo: kolektor pierwszego tranzystora przez kondensator do bazy drugiego i odwrotnie. Zmieniaj pojemność kondensatorów i przewidź, jak wpłynie na częstotliwość. To ćwiczenie montażowe — symulator nie odwzorowuje jeszcze samowzbudnych oscylacji.',parts:'Zasilanie planszy: 5 V · 2 tranzystory NPN · 4 rezystory · 2 kondensatory',kit:[19,19,5,5,5,5,17,17],voltage:5,structuralOnly:true,wires:[['0e','bn'],['1e','bn'],['bp','2a'],['2b','0c'],['bp','3a'],['3b','1c'],['bp','4a'],['4b','0b'],['bp','5a'],['5b','1b'],['0c','6a'],['6b','1b'],['1c','7a'],['7b','0b']]},
  {title:'Wzmacniacz audio — wspólny emiter',goal:'Zbuduj koncepcyjny stopień wzmacniacza na tranzystorze NPN. Zastosuj rezystor kolektorowy między plusem a kolektorem, rezystor emiterowy między emiterem a minusem oraz dzielnik polaryzujący bazę z dwóch rezystorów. Kondensator sprzęgający umieść na wejściu sygnału, a drugi między kolektorem a wyjściem do głośnika. Brzęczyk służy tu tylko jako symbol obciążenia — symulator nie modeluje jeszcze wzmocnienia ani sygnału audio.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · 4 rezystory · 2 kondensatory · brzęczyk',kit:[19,5,5,5,5,17,17,9],voltage:5,structuralOnly:true,wires:[['bp','1a'],['1b','0c'],['0e','2a'],['2b','bn'],['bp','3a'],['3b','0b'],['0b','4a'],['4b','bn'],['0b','5b'],['0c','6a'],['6b','7a'],['7b','bn']]}
 ];
-const taskCards=SB_TASKS.map((task,i)=>`<article class="sb-task"><h3>${i+1}. ${task.title}</h3><p>${task.goal}</p><p class="sb-materials">Elementy: ${task.parts}</p><button data-sbkit="${i}">Dodaj elementy do planszy</button><button data-sbcheck="${i}">Sprawdź układ</button></article>`).join('');
+const taskCards=SB_TASKS.map((task,i)=>`<article class="sb-task"><h3>${i+1}. ${task.title}</h3><p>${task.goal}</p><p class="sb-materials">Elementy: ${task.parts}</p><button data-sbkit="${i}">Dodaj elementy do planszy</button><button data-sbhint="${i}">Podpowiedź</button><button data-sbcheck="${i}">Sprawdź układ</button></article>`).join('');
 $('cpal').innerHTML=`<nav class="sb-tabs" aria-label="Zawartość piaskownicy"><button type="button" data-sbtab="elements" aria-selected="true">Elementy</button><button type="button" data-sbtab="tasks" aria-selected="false">Zadania (${SB_TASKS.length})</button></nav><div id="sb-elements" class="sb-panel">${GR.map(([n,ix])=>`<div class="pg"><span class="pgl">${n}</span><div class="pgb">${ix.map(i=>`<button data-add="${i}">${PAL[i][0]}</button>`).join('')}</div></div>`).join('')}<div class="pg act"><span class="pgl">Plik i gra</span><div class="pgb"><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button><button data-sbclear="1">Wyczyść planszę</button></div></div></div><div id="sb-tasks" class="sb-panel" hidden>${taskCards}</div>`;
 function setSandboxTab(tab){
  const tasks=tab==='tasks';
@@ -486,6 +486,30 @@ function checkSandboxTask(index){
  $('cmsg').textContent=task.structuralOnly
   ?'Połączenia są poprawne. To zadanie sprawdza montaż — symulator nie modeluje jeszcze generowania ani wzmacniania sygnału.'
   :'Połączenia są zgodne z zadaniem. Sprawdź odczyty przyrządów i działanie elementów na planszy.';
+}
+function hintSandboxTask(index){
+ const task=SB_TASKS[index],session=activeSandboxTask;
+ if(ci!==SB){$('cmsg').textContent='Przejdź do planszy piaskownicy, aby skorzystać z podpowiedzi.';return}
+ if(!task||!session||session.index!==index){$('cmsg').textContent='Najpierw kliknij „Dodaj elementy do planszy” przy tym zadaniu.';return}
+ const signature=(a,b)=>[a,b].sort().join('|');
+ const existing=new Set(cw.map(w=>signature(w.from,w.to)));
+ const next=task.wires.find(([a,b])=>!existing.has(signature(
+  a==='bp'||a==='bn'?a:session.ids[Number(a.match(/^\d+/)[0])]+a.slice(-1),
+  b==='bp'||b==='bn'?b:session.ids[Number(b.match(/^\d+/)[0])]+b.slice(-1)
+ )));
+ if(!next){hintSet.clear();$('cmsg').textContent='Wszystkie wymagane połączenia są już wykonane. Użyj „Sprawdź układ”, aby ocenić zadanie.';circuitPaint();return}
+ const endpoint=token=>{
+  if(token==='bp')return'plus baterii';
+  if(token==='bn')return'minus baterii';
+  const match=/^(\d+)([a-z])$/.exec(token);
+  if(!match)throw new Error(`Nieprawidłowy zacisk zadania: ${token}`);
+  const id=session.ids[Number(match[1])],node=circuitNodes().find(n=>n.id===id+match[2]);
+  return`zacisk ${node?.label||match[2]} elementu ${id}`;
+ };
+ const [from,to]=next.map(token=>token==='bp'||token==='bn'?token:session.ids[Number(token.match(/^\d+/)[0])]+token.slice(-1));
+ hintSet=new Set([from,to]);
+ $('cmsg').textContent=`Podpowiedź: połącz ${endpoint(next[0])} z ${endpoint(next[1])}. Zaciski są podświetlone na planszy.`;
+ circuitPaint();
 }
 function sbDel(id){
  const ts=new Set(circuitNodes().filter(n=>n.component===id).map(n=>n.id));
@@ -843,9 +867,10 @@ document.addEventListener('click',e=>{
  const component=e.target.closest('[data-drag]');
  if(component){selectSandboxComponent(component);if(C[ci].components.find(c=>c.id===component.dataset.drag)?.type==='oscilloscope')openScope(component.dataset.drag)}
  else if(ci===SB&&e.target.closest('[data-canvas]')&&!wireDraft)clearSandboxSelection();
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbtab],[data-sbkit],[data-sbcheck],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbtab],[data-sbkit],[data-sbhint],[data-sbcheck],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  if(t.dataset.sbtab){setSandboxTab(t.dataset.sbtab);return}
+ if(t.dataset.sbhint!==undefined){hintSandboxTask(Number(t.dataset.sbhint));return}
  if(t.dataset.sbcheck!==undefined){checkSandboxTask(Number(t.dataset.sbcheck));return}
  if(t.dataset.sbkit!==undefined){
   const index=Number(t.dataset.sbkit),task=SB_TASKS[index];
@@ -921,7 +946,7 @@ document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
  const scope=e.target.closest('[data-drag]');
  if(scope&&C[ci].components.find(c=>c.id===scope.dataset.drag)?.type==='oscilloscope'){e.preventDefault();openScope(scope.dataset.drag);return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbtab],[data-sbkit],[data-sbcheck],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbtab],[data-sbkit],[data-sbhint],[data-sbcheck],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
