@@ -165,6 +165,17 @@ html{max-width:100%;overflow-x:hidden}
 .sbmode .circuit svg{min-width:0}
 .sbmode #cboard{overflow:visible}
 @media(max-width:900px){body.sbmode{overflow-x:hidden;overflow-y:auto}.sbmode header{flex-wrap:wrap}.sbmode #cwrap{overflow:hidden}}
+.scope-dialog{width:min(1000px,calc(100vw - 32px));max-width:none;max-height:90vh;padding:0;border:1px solid var(--ln);border-radius:10px;background:var(--pn);color:var(--tx);box-shadow:0 20px 70px #0008}
+.scope-dialog::backdrop{background:#071427bb;backdrop-filter:blur(3px)}
+.scope-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--ln)}
+.scope-head h2{margin:0;font:700 20px/1.3 system-ui,sans-serif}
+.scope-body{padding:16px 18px 20px}
+.scope-readings{display:flex;gap:12px 24px;flex-wrap:wrap;align-items:baseline;margin:0 0 12px}
+.scope-current{font-size:clamp(22px,4vw,36px);font-weight:800;color:#62e6a7}
+.scope-range{color:var(--mu)}
+.scope-screen{display:block;width:100%;height:auto;max-height:60vh;border:1px solid #29405a;border-radius:6px;background:#071427}
+.scope-hint{margin:10px 0 0;color:var(--mu);font-size:12px}
+@media(max-width:600px){.scope-body{padding:10px}.scope-head{padding:10px}.scope-screen{min-height:220px}}
 </style></head><body class="sbmode">
 <main>
 <header><h1>Obwody</h1><nav id="mode" aria-label="Tryb gry"><a class="navlink" href="index.html">Rejestr</a><a class="navlink" href="obwody-podstawy.html">Obwody – podstawy</a><a class="navlink p" href="piaskownica.html">Obwody - piaskownica</a><a class="navlink" href="gra_samolotowa.html">Samolot</a></nav></header>
@@ -187,6 +198,19 @@ html{max-width:100%;overflow-x:hidden}
 <p class="mu">Nowe elementy: dioda Zenera (stabilizuje napięcie), warystor (ogranicza przepięcia po przekroczeniu progu), tyrystor SCR (zatrzaskuje stan po wyzwoleniu bramki), fotorezystor (zmienia opór wraz z suwakiem „światło”), potencjometr (kliknij, aby przesunąć suwak W), przekaźnik (prąd cewki zamyka styki), niezależne przełączniki oraz kondensator i cewka, które magazynują energię. „Usuń przewody” resetuje stany elementów magazynujących energię i zatrzaśnięty tyrystor. Za oszczędny układ dostajesz więcej gwiazdek, a „Cofnij przewód” usuwa ostatnie połączenie.</p>
 </section>
 </main>
+<dialog id="scope-modal" class="scope-dialog" aria-labelledby="scope-title">
+ <div class="scope-head"><h2 id="scope-title">Oscyloskop · CH1</h2><button type="button" data-scope-close aria-label="Zamknij oscyloskop">Zamknij ✕</button></div>
+ <div class="scope-body">
+  <div class="scope-readings"><strong id="scope-current" class="scope-current">0.00 V</strong><span id="scope-range" class="scope-range">Min 0.00 V · Max 0.00 V</span></div>
+  <svg class="scope-screen" viewBox="0 0 1000 460" role="img" aria-label="Przebieg napięcia na kanale oscyloskopu">
+   <defs><pattern id="scope-grid" width="44" height="36" patternUnits="userSpaceOnUse"><path d="M44 0H0V36" fill="none" stroke="#29405a" stroke-width="1"/></pattern></defs>
+   <rect x="80" y="40" width="880" height="360" fill="url(#scope-grid)"/><path d="M80 220H960M520 40V400" fill="none" stroke="#7186a4" stroke-width="1.5"/>
+   <path id="scope-trace" d="" fill="none" stroke="#62e6a7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+   <text x="80" y="430" fill="#a3bbe8" font-size="16">przebieg napięcia · CH1</text>
+  </svg>
+  <p class="scope-hint">Oś pionowa pokazuje napięcie między zaciskami oscyloskopu. Przeciwny kierunek przewodów odwraca przebieg.</p>
+ </div>
+</dialog>
 <script>const $=id=>document.getElementById(id);
 const C=[
  {name:'Piaskownica',difficulty:'easy',free:true,sandbox:true,voltage:5,task:'Piaskownica: buduj własne układy. Dodawaj dowolne elementy z palety nad planszą, łącz je przewodami i obserwuj symulację na żywo. Zmieniaj napięcie baterii, klikaj elementy regulowane i steruj światłem. Zaznacz element, aby obrócić go lub usunąć. Plansza zapisuje się w przeglądarce.',components:[]}
@@ -265,8 +289,8 @@ function routePoints(from,to,waypoints=[]){
  return routed.filter((p,i,a)=>i===0||p.x!==a[i-1].x||p.y!==a[i-1].y);
 }
 const pathOf=points=>points.map((p,i)=>`${i?'L':'M'}${p.x} ${p.y}`).join(' ');
-let cblown={},cbtn=false,hintSet=new Set(),au=null,ao=null,ctog={},ccap={},cind={},cthyristor={};
-const LB={lamp:'żarówki',switch:'wyłącznika',resistor:'rezystora',motor:'silnika',fuse:'bezpiecznika',buzzer:'brzęczyka',diode:'diody',photodiode:'fotodiody',diac:'DIAC',capacitor:'kondensatora',inductor:'cewki',choke:'dławika',transistor:'tranzystora',pnp:'tranzystora PNP',mosfet:'tranzystora MOSFET',thyristor:'tyrystora',varistor:'warystora',led:'LED',ammeter:'amperomierza',voltmeter:'woltomierza',button:'przycisku',zener:'diody Zenera',pot:'potencjometru',relay:'przekaźnika',ldr:'fotorezystora',toggle:'przełącznika',ntc:'termistora NTC',ptc:'termistora PTC',pmos:'tranzystora P-MOSFET',jfet:'tranzystora JFET',pjfet:'tranzystora JFET P'};
+let cblown={},cbtn=false,hintSet=new Set(),au=null,ao=null,ctog={},ccap={},cind={},cthyristor={},oscTrace={},activeScope=null;
+const LB={lamp:'żarówki',switch:'wyłącznika',resistor:'rezystora',motor:'silnika',fuse:'bezpiecznika',buzzer:'brzęczyka',diode:'diody',photodiode:'fotodiody',diac:'DIAC',oscilloscope:'oscyloskopu',capacitor:'kondensatora',inductor:'cewki',choke:'dławika',transistor:'tranzystora',pnp:'tranzystora PNP',mosfet:'tranzystora MOSFET',thyristor:'tyrystora',varistor:'warystora',led:'LED',ammeter:'amperomierza',voltmeter:'woltomierza',button:'przycisku',zener:'diody Zenera',pot:'potencjometru',relay:'przekaźnika',ldr:'fotorezystora',toggle:'przełącznika',ntc:'termistora NTC',ptc:'termistora PTC',pmos:'tranzystora P-MOSFET',jfet:'tranzystora JFET',pjfet:'tranzystora JFET P'};
 const DT=.0005,lt=()=>$("clight")?+$("clight").value/100:.7,tp=()=>$("ctemp")?+$("ctemp").value:25;
 const glow=(b,col,x,y)=>b>.03?`<circle cx="${x}" cy="${y}" r="38" fill="${col}" opacity="${(b*.65).toFixed(2)}"/>`:'';
 try{const nw=JSON.parse(localStorage.getItem('obwody2')),od=JSON.parse(localStorage.getItem('obwody1'));(nw||(od||[]).slice(0,30)).forEach((v,i)=>{if(i<C.length)csolved[i]=v===true?1:+v||0})}catch(e){}
@@ -277,12 +301,13 @@ function buzz(on){const e=$('csnd');if(!e||!e.checked)on=false;
 function sim(btn,light,ss,tg,temp){light=light??lt();temp=temp??tp();
  const lv=C[ci],uf={},f=x=>uf[x]&&uf[x]!==x?(uf[x]=f(uf[x])):x;
  cw.forEach(w=>{const a=f(w.from),b=f(w.to);if(a!==b)uf[a]=b});
- const E=[],U=cvolt[ci],S={i:{},v:{},b:{},lit:{},on:{},ovl:{},bad:[],cs:{},il:{},rth:{},seg:{},snd:false,ib:0};
+ const E=[],U=cvolt[ci],S={i:{},v:{},osc:{},b:{},lit:{},on:{},ovl:{},bad:[],cs:{},il:{},rth:{},seg:{},snd:false,ib:0};
  for(const c of lv.components){
   const t=c.id,a=t+'a',b=t+'b',y=c.type;
-  const Rr={lamp:20,motor:15,buzzer:50,fuse:.5,ammeter:.05,voltmeter:1e6,resistor:c.r||100}[y];
+  const Rr={lamp:20,motor:15,buzzer:50,fuse:.5,ammeter:.05,voltmeter:1e6,oscilloscope:1e6,resistor:c.r||100}[y];
   if(y==='switch'){if(cclosed)E.push({id:t,a,b,g:100})}
   else if(y==='button'){if(btn||cbtn)E.push({id:t,a,b,g:100})}
+  else if(y==='oscilloscope')E.push({id:t,a,b,g:1e-6,scope:1});
   else if(y==='diode'||y==='led')E.push({id:t,a,b,d:1,vf:y==='led'?c.vf:.7});
   else if(y==='photodiode')E.push({id:t,a,b,d:1,vf:.7},{id:t+'ph',a,b,g:0,ie:.00001+light*.002,photo:1});
   else if(y==='transistor'||y==='pnp'){
@@ -345,7 +370,7 @@ function sim(btn,light,ss,tg,temp){light=light??lt();temp=temp??tp();
   }
   if(!ch)break;
  }
- for(const e of E){const g=gOf(e),d=vv(e.p)-vv(e.q),current=g*d-(e.d&&e.on?g*e.vf:e.varistor&&e.on?g*e.vz*Math.sign(d):e.thyristor&&e.on?g*e.vf:e.diac&&e.on?g*1.2*Math.sign(d):(e.ie||0));S.i[e.id]=Math.abs(current);S.v[e.id]=Math.abs(d);if(e.cap)S.cs[e.id]=d;if(e.ind)S.il[e.id]=current;if(e.photo)S.i[e.id.slice(0,-2)]=(S.i[e.id.slice(0,-2)]||0)+Math.abs(current)}
+ for(const e of E){const g=gOf(e),d=vv(e.p)-vv(e.q),current=g*d-(e.d&&e.on?g*e.vf:e.varistor&&e.on?g*e.vz*Math.sign(d):e.thyristor&&e.on?g*e.vf:e.diac&&e.on?g*1.2*Math.sign(d):(e.ie||0));S.i[e.id]=Math.abs(current);S.v[e.id]=Math.abs(d);if(e.scope)S.osc[e.id]=d;if(e.cap)S.cs[e.id]=d;if(e.ind)S.il[e.id]=current;if(e.photo)S.i[e.id.slice(0,-2)]=(S.i[e.id.slice(0,-2)]||0)+Math.abs(current)}
  if(!ss)for(const e of E)if(e.thyristor)cthyristor[ci+e.id]=!!e.on;
  S.ib=bp<0?U*2:(U-V[bp])*2;
  for(const c of lv.components){
@@ -383,9 +408,9 @@ const PAL=[['Żarówka',{type:'lamp'}],['LED czerwona',{type:'led',color:'#e0313
  ['Dioda',{type:'diode'}],['Dioda Zenera',{type:'zener',vz:5.1}],['Warystor',{type:'varistor',vz:6}],['Kondensator',{type:'capacitor',c:470}],['Kondensator elektrolityczny',{type:'capacitor',c:470,polarized:true}],
  ['Tranzystor NPN',{type:'transistor'}],['Tranzystor PNP',{type:'pnp'}],['MOSFET N',{type:'mosfet'}],['Tyrystor',{type:'thyristor'}],['Przekaźnik',{type:'relay'}],['Amperomierz',{type:'ammeter'}],['Woltomierz',{type:'voltmeter'}],
  ['LED żółta',{type:'led',color:'#f59f00',colorName:'żółta',vf:2.1}],['Dioda Schottky',{type:'schottky'}],['Dioda Zenera 3,3 V',{type:'zener',vz:3.3}],['Ogniwo 1,5 V',{type:'cell',e:1.5}],['Bateria 9 V',{type:'cell',e:9}],['Przełącznik SPDT',{type:'spdt'}],['Wyświetlacz 7-seg, wsp. katoda',{type:'seg7'}],['Wyświetlacz 7-seg, wsp. anoda',{type:'seg7',ca:1}],
- ['MOSFET P',{type:'pmos'}],['JFET N',{type:'jfet'}],['JFET P',{type:'pjfet'}],['Termistor NTC',{type:'ntc',r:1000,rs:CYCLES.ntc.values}],['Termistor PTC',{type:'ptc',r:100,rs:CYCLES.ptc.values}],['Dławik',{type:'choke',l:.047}],['Cewka indukcyjna',{type:'inductor',l:.047}],['Fotodioda',{type:'photodiode'}],['DIAC',{type:'diac',vt:6}]];
-const PFX={lamp:'l',led:'d',diode:'d',photodiode:'pd',diac:'da',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',inductor:'i',choke:'ch',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v',schottky:'sd',cell:'e',spdt:'w',seg7:'x',pmos:'q',jfet:'q',pjfet:'q',ntc:'nt',ptc:'pt'};
-const GR=[['Zasilanie',[29,30]],['Odbiorniki',[0,1,2,3,4,26,8,9]],['Wyświetlacze',[32,33]],['Rezystory i czujniki',[5,6,7,37,38]],['Kondensatory',[17,18]],['Cewki',[39,40]],['Sterowanie',[10,11,31,12,13,23]],['Półprzewodniki',[14,27,15,28,16,19,20,21,34,35,36,22,41,42]],['Pomiary',[24,25]]];
+ ['MOSFET P',{type:'pmos'}],['JFET N',{type:'jfet'}],['JFET P',{type:'pjfet'}],['Termistor NTC',{type:'ntc',r:1000,rs:CYCLES.ntc.values}],['Termistor PTC',{type:'ptc',r:100,rs:CYCLES.ptc.values}],['Dławik',{type:'choke',l:.047}],['Cewka indukcyjna',{type:'inductor',l:.047}],['Fotodioda',{type:'photodiode'}],['DIAC',{type:'diac',vt:6}],['Oscyloskop',{type:'oscilloscope'}]];
+const PFX={lamp:'l',led:'d',diode:'d',photodiode:'pd',diac:'da',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',inductor:'i',choke:'ch',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v',oscilloscope:'os',schottky:'sd',cell:'e',spdt:'w',seg7:'x',pmos:'q',jfet:'q',pjfet:'q',ntc:'nt',ptc:'pt'};
+const GR=[['Zasilanie',[29,30]],['Odbiorniki',[0,1,2,3,4,26,8,9]],['Wyświetlacze',[32,33]],['Rezystory i czujniki',[5,6,7,37,38]],['Kondensatory',[17,18]],['Cewki',[39,40]],['Sterowanie',[10,11,31,12,13,23]],['Półprzewodniki',[14,27,15,28,16,19,20,21,34,35,36,22,41,42]],['Pomiary',[24,25,43]]];
 $('cpal').innerHTML=GR.map(([n,ix])=>`<div class="pg"><span class="pgl">${n}</span><div class="pgb">${ix.map(i=>`<button data-add="${i}">${PAL[i][0]}</button>`).join('')}</div></div>`).join('')+'<div class="pg act"><span class="pgl">Plik i gra</span><div class="pgb"><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button><button data-sbclear="1">Wyczyść planszę</button></div></div>';
 function sbAdd(i){
  const comps=C[SB].components,def=JSON.parse(JSON.stringify(PAL[i][1])),used=new Set(comps.map(c=>c.id));
@@ -530,9 +555,9 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  }
  const blocks=[];
  for(const c of C[ci].components){
-  const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Rezystor '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik '+(c.rating||.5)+' A':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='photodiode'?'Fotodioda':type==='diac'?'DIAC':type==='capacitor'?(c.polarized?'Kondensator + ':'Kondensator ')+(c.c||470)+' µF':type==='inductor'?'Cewka '+inductanceLabel(c.l):type==='choke'?'Dławik '+inductanceLabel(c.l):type==='transistor'?'Tranzystor NPN':type==='pnp'?'Tranzystor PNP':type==='mosfet'?'N-MOSFET':type==='pmos'?'P-MOSFET':type==='jfet'?'JFET N-kanałowy':type==='pjfet'?'JFET P-kanałowy':type==='ntc'?'Termistor NTC R25 '+(c.r||1000)+' Ω':type==='ptc'?'Termistor PTC R25 '+(c.r||100)+' Ω':type==='thyristor'?'Tyrystor SCR':type==='varistor'?'Warystor '+(c.vz||6)+' V':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':type==='zener'?'Dioda Zenera '+(c.vz||5.1)+' V':type==='schottky'?'Dioda Schottky':type==='cell'?(c.e>3?'Bateria ':'Ogniwo ')+String(c.e).replace('.',',')+' V':type==='spdt'?'Przełącznik SPDT':type==='seg7'?(c.ca?'7-seg wsp. anoda':'7-seg wsp. katoda'):type==='pot'?'Potencjometr '+(c.r||1000)+' Ω':type==='relay'?'Przekaźnik':type==='ldr'?'Fotorezystor':type==='toggle'?'Przełącznik':`LED ${c.colorName||''}`;
+  const {id,type}=c,{x,y}=cpos[ci][id],angle=crot[ci][id],label=type==='lamp'?'Żarówka':type==='switch'?'Wyłącznik':type==='resistor'?'Rezystor '+(c.r||100)+' Ω':type==='motor'?'Silnik':type==='fuse'?'Bezpiecznik '+(c.rating||.5)+' A':type==='buzzer'?'Brzęczyk':type==='diode'?'Dioda':type==='photodiode'?'Fotodioda':type==='diac'?'DIAC':type==='oscilloscope'?'Oscyloskop':type==='capacitor'?(c.polarized?'Kondensator + ':'Kondensator ')+(c.c||470)+' µF':type==='inductor'?'Cewka '+inductanceLabel(c.l):type==='choke'?'Dławik '+inductanceLabel(c.l):type==='transistor'?'Tranzystor NPN':type==='pnp'?'Tranzystor PNP':type==='mosfet'?'N-MOSFET':type==='pmos'?'P-MOSFET':type==='jfet'?'JFET N-kanałowy':type==='pjfet'?'JFET P-kanałowy':type==='ntc'?'Termistor NTC R25 '+(c.r||1000)+' Ω':type==='ptc'?'Termistor PTC R25 '+(c.r||100)+' Ω':type==='thyristor'?'Tyrystor SCR':type==='varistor'?'Warystor '+(c.vz||6)+' V':type==='ammeter'?'Amperomierz':type==='voltmeter'?'Woltomierz':type==='button'?'Przycisk':type==='zener'?'Dioda Zenera '+(c.vz||5.1)+' V':type==='schottky'?'Dioda Schottky':type==='cell'?(c.e>3?'Bateria ':'Ogniwo ')+String(c.e).replace('.',',')+' V':type==='spdt'?'Przełącznik SPDT':type==='seg7'?(c.ca?'7-seg wsp. anoda':'7-seg wsp. katoda'):type==='pot'?'Potencjometr '+(c.r||1000)+' Ω':type==='relay'?'Przekaźnik':type==='ldr'?'Fotorezystor':type==='toggle'?'Przełącznik':`LED ${c.colorName||''}`;
   const start=svg.length;
-  svg+=`<g data-drag="${id}" data-label="${label}" class="drag-part${selectedComponent===id?' selected':''}">`;
+  svg+=`<g data-drag="${id}" data-label="${label}" class="drag-part${selectedComponent===id?' selected':''}"${type==='oscilloscope'?' tabindex="0" role="button" aria-label="Otwórz duży panel oscyloskopu"':''}>`;
   svg+=`<rect x="${x-34}" y="${y-34}" width="68" height="68" class="drag-hit"/>`;
   svg+=`<g transform="rotate(${angle} ${x} ${y})">`;
   if(type==='lamp')svg+=glow(S.b[id],'#ffd43b',x,y)+`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-11} ${y-11}L${x+11} ${y+11}M${x+11} ${y-11}L${x-11} ${y+11}" class="sym"/>`;
@@ -541,6 +566,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
   else if(type==='led')svg+=glow(S.b[id],c.color,x,y)+`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="led" style="--led-color:${c.color}"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/><path d="M${x-6} ${y-22}l7-9m-7 9h8m-2-8v8M${x+4} ${y-17}l8-8m-8 8h8m-2-8v8" class="light"/>`;
   else if(type==='diode'||type==='photodiode')svg+=`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="part"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/>`+(type==='photodiode'?`<path d="M${x+24} ${y-28}L${x+13} ${y-17}M${x+13} ${y-17}l1-7m-1 7 7-1M${x+36} ${y-18}L${x+25} ${y-7}M${x+25} ${y-7}l1-7m-1 7 7-1" class="sym"/>`:'');
   else if(type==='diac')svg+=`<circle cx="${x}" cy="${y}" r="24" class="part"/><path d="M${x-15} ${y-12}L${x} ${y}L${x-15} ${y+12}ZM${x+15} ${y-12}L${x} ${y}L${x+15} ${y+12}ZM${x-15} ${y-16}V${y-8}M${x+15} ${y+8}V${y+16}" class="sym"/><rect x="${x-25}" y="${y-24}" width="50" height="48" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień napięcie progowe DIAC"/>`;
+  else if(type==='oscilloscope'){const trace=oscTrace[ci+id]||[],scale=Math.max(1,...trace.map(Math.abs))*1.25,path=trace.map((v,i)=>`${i?'L':'M'}${x-21+i*42/Math.max(1,trace.length-1)} ${y-12-v/scale*10}`).join(' ');svg+=`<rect x="${x-27}" y="${y-22}" width="54" height="44" rx="3" fill="#071427" stroke="var(--ln)" stroke-width="2"/><path d="M${x-18} ${y-14}H${x+18}M${x-18} ${y-6}H${x+18}M${x-18} ${y+2}H${x+18}M${x-18} ${y+10}H${x+18}M${x-18} ${y-14}V${y+10}M${x-6} ${y-14}V${y+10}M${x+6} ${y-14}V${y+10}M${x+18} ${y-14}V${y+10}" fill="none" stroke="#29405a" stroke-width="1"/><path d="${path}" fill="none" stroke="#62e6a7" stroke-width="2"/>`;}
   else if(type==='varistor')svg+=`<circle cx="${x}" cy="${y}" r="23" class="part"/><path d="M${x-13} ${y+13}L${x+13} ${y-13}M${x-5} ${y-4}L${x+5} ${y-4}M${x} ${y-9}L${x} ${y+1}" class="sym"/>`;
   else if(type==='thyristor')svg+=`<path d="M${x-13} ${y-16}L${x+9} ${y}L${x-13} ${y+16}Z" class="part"/><line x1="${x+10}" y1="${y-18}" x2="${x+10}" y2="${y+18}" class="sym"/><path d="M${x-28} ${y+28}L${x-8} ${y+10}" class="sym"/>`;
   else if(type==='capacitor')svg+=`<line x1="${x-7}" y1="${y-22}" x2="${x-7}" y2="${y+22}" class="sym"/><line x1="${x+7}" y1="${y-22}" x2="${x+7}" y2="${y+22}" class="sym"/><rect x="${x-24}" y="${y-22}" width="48" height="44" fill="transparent" data-cycle="${id}" tabindex="0" role="button" aria-label="Zmień pojemność kondensatora"/>`;
@@ -582,6 +608,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
   if(type==='led')svg+=`<text x="${x}" y="${y+39}" class="cm" text-anchor="middle">Uₑ ≈ ${c.vf.toFixed(1)} V · A → K</text>`;
   if(type==='diode'||type==='photodiode')svg+=`<text x="${x}" y="${y+39}" class="cm" text-anchor="middle">A → K</text>`;
   if(type==='diac')svg+=`<text x="${x}" y="${y+42}" class="voltage" text-anchor="middle">±${(c.vt||6).toFixed(1)} V · ${S.on[id]?'przewodzi':'blokuje'}</text>`;
+  if(type==='oscilloscope')svg+=`<text x="${x}" y="${y+42}" class="voltage" text-anchor="middle">${(S.osc[id]||0).toFixed(2)} V</text>`;
   if(type==='photodiode')svg+=`<text x="${x}" y="${y+55}" class="voltage" text-anchor="middle">I ${((S.i[id]||0)*1000).toFixed(2)} mA</text>`;
   if(type==='ammeter'||type==='voltmeter')svg+=`<text x="${x}" y="${y+42}" class="voltage" text-anchor="middle">${type==='ammeter'?((S.i[id]||0)*1000).toFixed(1)+' mA':(S.v[id]||0).toFixed(2)+' V'}</text>`;
   if(type==='capacitor')svg+=`<text x="${x}" y="${y+42}" class="voltage" text-anchor="middle">${(ccap[ci+id]||0).toFixed(2)} V</text>`;
@@ -624,7 +651,7 @@ function circuitPaint(){if(ci===SB){if(!sbIn){cw=sbw;sbIn=true}}else sbIn=false;
  svg+='</svg>';
  $('cboard').innerHTML=svg;
  $('cread').innerHTML=cw.length||C[ci].free?`Prąd z baterii: <b>${(S.ib*1000).toFixed(0)} mA</b>${[...new Set(S.bad)].map(x=>' <span class="warn">⚠ '+x+'</span>').join('')}`:'Narysuj przewody, a zobaczysz prąd i zachowanie elementów na żywo.';
- buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;$('cmp').hidden=ci!==SB||!(mp.show||mp.on);applyView();if(ci===SB){sbw=cw;sbSave()}if(mp.on)mpDirty();
+ buzz(S.snd);$('cpal').hidden=ci!==SB;if(ci!==SB)$('cshare').hidden=true;$('cmp').hidden=ci!==SB||!(mp.show||mp.on);applyView();if(ci===SB){sbw=cw;sbSave()}if(mp.on)mpDirty();updateScopePanel();
  $('ccancel').disabled=!wireDraft;
  $('cnext').disabled=ci===C.length-1;
 }
@@ -694,6 +721,21 @@ function clearSandboxSelection(){
  $('cselection').hidden=true;
  $('cboard').querySelector('.drag-part.selected')?.classList.remove('selected');
 }
+function openScope(id){activeScope={ci,id};if(!$('scope-modal').open)$('scope-modal').showModal();updateScopePanel()}
+function updateScopePanel(){
+ const dialog=$('scope-modal');if(!dialog.open||!activeScope)return;
+ const {ci:level,id}=activeScope,component=C[level]?.components.find(c=>c.id===id&&c.type==='oscilloscope');
+ if(level!==ci||!component){dialog.close();return}
+ const trace=oscTrace[level+id]||[],values=trace.length?trace:[0],rawMin=Math.min(...values),rawMax=Math.max(...values);
+ let min=rawMin,max=rawMax;if(max-min<.1){const mid=(max+min)/2;min=mid-.5;max=mid+.5}else{const pad=(max-min)*.12;min-=pad;max+=pad}
+ const path=trace.map((v,i)=>`${i?'L':'M'}${80+i*880/Math.max(1,trace.length-1)} ${400-(v-min)*360/(max-min)}`).join(' ');
+ $('scope-title').textContent=`Oscyloskop · ${id} · CH1`;
+ $('scope-current').textContent=`${(trace.length?trace[trace.length-1]:0).toFixed(2)} V`;
+ $('scope-range').textContent=`Min ${rawMin.toFixed(2)} V · Max ${rawMax.toFixed(2)} V`;
+ $('scope-trace').setAttribute('d',path);
+}
+$('scope-modal').addEventListener('close',()=>{activeScope=null});
+$('scope-modal').addEventListener('click',e=>{if(e.target===$('scope-modal'))$('scope-modal').close();if(e.target.closest('[data-scope-close]'))$('scope-modal').close()});
 document.addEventListener('pointerdown',e=>{
  if(e.button!==0)return;
  if(e.target.closest('[data-terminal],[data-wire]'))return;
@@ -732,7 +774,7 @@ document.addEventListener('change',e=>{
 document.addEventListener('click',e=>{
  if(skipCircuitClick&&e.target.closest('#cboard')){e.preventDefault();e.stopPropagation();skipCircuitClick=false;return}
  const component=e.target.closest('[data-drag]');
- if(component)selectSandboxComponent(component);
+ if(component){selectSandboxComponent(component);if(C[ci].components.find(c=>c.id===component.dataset.drag)?.type==='oscilloscope')openScope(component.dataset.drag)}
  else if(ci===SB&&e.target.closest('[data-canvas]')&&!wireDraft)clearSandboxSelection();
  const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
@@ -799,6 +841,8 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
+ const scope=e.target.closest('[data-drag]');
+ if(scope&&C[ci].components.find(c=>c.id===scope.dataset.drag)?.type==='oscilloscope'){e.preventDefault();openScope(scope.dataset.drag);return}
  const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
@@ -812,8 +856,8 @@ let cpd=false;
 document.addEventListener('pointerdown',()=>{cpd=true},true);
 ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,()=>{cpd=false},true));
 document.addEventListener('input',e=>{if(e.target.id==='clight')circuitPaint();if(e.target.id==='ctemp'){$('ctempv').textContent=e.target.value+' °C';circuitPaint()}});
-setInterval(()=>{if(cpd||!cw.length||!C[ci].components.some(c=>c.type==='capacitor'||c.type==='inductor'||c.type==='choke'))return;const S=sim(false);let ch=0;
- C[ci].components.forEach(c=>{if(c.type==='capacitor'){const v=S.cs[c.id]||0,o=ccap[ci+c.id]||0;if(Math.abs(v-o)>2e-4)ch=1;ccap[ci+c.id]=v}else if(c.type==='inductor'||c.type==='choke'){const v=S.il[c.id]||0,o=cind[ci+c.id]||0;if(Math.abs(v-o)>.0002)ch=1;cind[ci+c.id]=v}});if(ch)circuitPaint()},60);
+setInterval(()=>{if(cpd||(!cw.length&&!activeScope)||!C[ci].components.some(c=>c.type==='capacitor'||c.type==='inductor'||c.type==='choke'||c.type==='oscilloscope'))return;const S=sim(false);let ch=0;
+ C[ci].components.forEach(c=>{if(c.type==='capacitor'){const v=S.cs[c.id]||0,o=ccap[ci+c.id]||0;if(Math.abs(v-o)>2e-4)ch=1;ccap[ci+c.id]=v}else if(c.type==='inductor'||c.type==='choke'){const v=S.il[c.id]||0,o=cind[ci+c.id]||0;if(Math.abs(v-o)>.0002)ch=1;cind[ci+c.id]=v}else if(c.type==='oscilloscope'){const trace=oscTrace[ci+c.id]||(oscTrace[ci+c.id]=[]);trace.push(S.osc[c.id]||0);if(trace.length>48)trace.shift();ch=1}});if(ch)circuitPaint()},60);
 if(SBP){document.body.classList.add('sbmode');document.title='Piaskownica – Obwody';ci=SB;sbHash();addEventListener('hashchange',sbHash)}
 if(SBP){roomHash();addEventListener('hashchange',roomHash)}
 $('cwrap').addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(Math.max(-200,Math.min(200,e.deltaY))*.0012),e.clientX,e.clientY)},{passive:false});
