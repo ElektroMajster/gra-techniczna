@@ -228,7 +228,7 @@ html{max-width:100%;overflow-x:hidden}
 const C=[
  {name:'Piaskownica',difficulty:'easy',free:true,sandbox:true,voltage:5,task:'Piaskownica: buduj własne układy. Dodawaj dowolne elementy z palety nad planszą, łącz je przewodami i obserwuj symulację na żywo. Zmieniaj napięcie baterii, klikaj elementy regulowane i steruj światłem. Zaznacz element, aby obrócić go lub usunąć. Plansza zapisuje się w przeglądarce.',components:[]}
 ];
-let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false),selectedComponent=null,selectedLabel='';
+let ci=0,cw=[],wireDraft=null,cclosed=false,cdrag=null,skipCircuitClick=false,csolved=Array(C.length).fill(false),selectedComponent=null,selectedLabel='',activeSandboxTask=null;
 const cpos=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,{x:c.x,y:c.y}])));
 const crot=C.map(level=>Object.fromEntries(level.components.map(c=>[c.id,0])));
 const cvolt=C.map(level=>level.voltage||3);
@@ -425,24 +425,24 @@ const PAL=[['Żarówka',{type:'lamp'}],['LED czerwona',{type:'led',color:'#e0313
 const PFX={lamp:'l',led:'d',diode:'d',photodiode:'pd',diac:'da',zener:'z',varistor:'u',resistor:'r',pot:'p',ldr:'g',motor:'m',buzzer:'bz',switch:'sw',toggle:'t',button:'b',fuse:'f',capacitor:'c',inductor:'i',choke:'ch',transistor:'q',pnp:'q',mosfet:'q',thyristor:'q',relay:'k',ammeter:'a',voltmeter:'v',oscilloscope:'os',schottky:'sd',cell:'e',spdt:'w',seg7:'x',pmos:'q',jfet:'q',pjfet:'q',ntc:'nt',ptc:'pt'};
 const GR=[['Zasilanie',[29,30]],['Odbiorniki',[0,1,2,3,4,26,8,9]],['Wyświetlacze',[32,33]],['Rezystory i czujniki',[5,6,7,37,38]],['Kondensatory',[17,18]],['Cewki',[39,40]],['Sterowanie',[10,11,31,12,13,23]],['Półprzewodniki',[14,27,15,28,16,19,20,21,34,35,36,22,41,42]],['Pomiary',[24,25,43]]];
 const SB_TASKS=[
- {title:'LED z rezystorem',goal:'Ustaw zasilanie planszy na 5 V. Zbuduj bezpieczny obwód szeregowy: plus → rezystor → czerwona LED → minus. Ustaw anodę LED od strony plusa. Sprawdź, jak zmienia się prąd po zmianie rezystora.',parts:'Zasilanie planszy: 5 V · rezystor · czerwona LED',kit:[5,1]},
- {title:'Dzielnik napięcia',goal:'Ustaw zasilanie na 5 V. Połącz dwa rezystory szeregowo między biegunami baterii. Podłącz woltomierz równolegle do jednego rezystora i porównaj odczyt z napięciem zasilania.',parts:'Zasilanie planszy: 5 V · 2 rezystory · woltomierz',kit:[5,5,25]},
- {title:'Ładowanie kondensatora',goal:'Ustaw zasilanie na 5 V. Połącz szeregowo źródło z planszy, rezystor i kondensator. Podłącz oscyloskop równolegle do kondensatora. Obserwuj narastanie napięcia i zmień pojemność kondensatora.',parts:'Zasilanie planszy: 5 V · rezystor · kondensator · oscyloskop',kit:[5,17,43]},
- {title:'Tranzystor jako przełącznik',goal:'Ustaw zasilanie na 5 V. Zbuduj sterowanie żarówką tranzystorem NPN: emiter do minusa, żarówka między plusem a kolektorem, a baza przez rezystor i przełącznik do plusa.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · rezystor · przełącznik · żarówka',kit:[19,5,11,0]},
- {title:'Czujnik światła',goal:'Ustaw zasilanie na 5 V. Połącz szeregowo źródło z planszy, fotorezystor, rezystor i czerwoną LED. Zmieniaj suwak światła i obserwuj wpływ jasności na prąd oraz świecenie LED.',parts:'Zasilanie planszy: 5 V · fotorezystor · rezystor · czerwona LED',kit:[7,5,1]},
- {title:'DIAC i próg napięcia',goal:'Ustaw zasilanie na 9 V. Połącz źródło z planszy, rezystor, DIAC i żarówkę szeregowo. Zmieniaj napięcie baterii oraz próg DIAC i sprawdź, kiedy element zacznie przewodzić.',parts:'Zasilanie planszy: 9 V · rezystor · DIAC · żarówka',kit:[5,42,0]},
- {title:'Dwie żarówki równolegle',goal:'Ustaw zasilanie na 5 V i podłącz każdą żarówkę osobną gałęzią między plusem a minusem. Porównaj jasność z połączeniem szeregowym.',parts:'Zasilanie planszy: 5 V · 2 żarówki',kit:[0,0]},
- {title:'Dwie gałęzie LED',goal:'Ustaw zasilanie na 5 V. Zbuduj dwie gałęzie równoległe, każdą z własnym rezystorem i LED połączonymi szeregowo. Zwróć uwagę, że każda LED ma własne ograniczenie prądu.',parts:'Zasilanie planszy: 5 V · 2 rezystory · czerwona i zielona LED',kit:[5,1,5,2]},
- {title:'Dioda przewodzi w jedną stronę',goal:'Ustaw zasilanie na 3 V. Połącz szeregowo źródło, diodę i żarówkę. Zmień kierunek podłączenia diody i sprawdź, kiedy obwód przewodzi.',parts:'Zasilanie planszy: 3 V · dioda · żarówka',kit:[14,0]},
- {title:'Bezpiecznik w obwodzie',goal:'Ustaw zasilanie na 5 V i włącz bezpiecznik szeregowo z rezystorem oraz żarówką. Obserwuj, jak zmiana rezystancji wpływa na prąd płynący przez bezpiecznik.',parts:'Zasilanie planszy: 5 V · bezpiecznik · rezystor · żarówka',kit:[13,5,0]},
- {title:'Potencjometr jako dzielnik',goal:'Ustaw zasilanie na 9 V. Połącz końce potencjometru z plusem i minusem, a woltomierz między suwak W i minus. Klikaj potencjometr, aby zmieniać napięcie wyjściowe.',parts:'Zasilanie planszy: 9 V · potencjometr · woltomierz',kit:[6,25]},
- {title:'Termistor NTC',goal:'Ustaw zasilanie na 5 V. Połącz termistor NTC szeregowo z rezystorem i żarówką. Zmieniaj temperaturę suwakiem i obserwuj zmianę rezystancji oraz prądu.',parts:'Zasilanie planszy: 5 V · termistor NTC · rezystor · żarówka',kit:[37,5,0]},
- {title:'Przekaźnik sterowany przyciskiem',goal:'Ustaw zasilanie na 5 V. Zbuduj obwód sterujący: plus przez przycisk do cewki przekaźnika, a drugi koniec cewki do minusa. W osobnym obwodzie połącz styki przekaźnika z żarówką i obserwuj działanie podczas przytrzymania przycisku.',parts:'Zasilanie planszy: 5 V · przekaźnik · przycisk · żarówka',kit:[23,12,0]},
- {title:'Fotodioda reaguje na światło',goal:'Ustaw zasilanie na 5 V. Połącz fotodiodę, rezystor i amperomierz w obwód szeregowy. Zmieniaj jasność suwakiem i obserwuj, jak zmienia się prąd. Jeśli odczyt jest bliski zeru, odwróć fotodiodę.',parts:'Zasilanie planszy: 5 V · fotodioda · rezystor · amperomierz',kit:[41,5,24]},
- {title:'Generator prostokątny — multiwibrator astabilny',goal:'Zbuduj klasyczny multiwibrator astabilny na dwóch tranzystorach NPN. Połącz emitery z minusem, w każdym kolektorze umieść rezystor do plusa, a każdą bazę podciągnij rezystorem do plusa. Dodaj kondensatory krzyżowo: kolektor pierwszego tranzystora przez kondensator do bazy drugiego i odwrotnie. Zmieniaj pojemność kondensatorów i przewidź, jak wpłynie na częstotliwość. To ćwiczenie montażowe — symulator nie odwzorowuje jeszcze samowzbudnych oscylacji.',parts:'Zasilanie planszy: 5 V · 2 tranzystory NPN · 4 rezystory · 2 kondensatory',kit:[19,19,5,5,5,5,17,17]},
- {title:'Wzmacniacz audio — wspólny emiter',goal:'Zbuduj koncepcyjny stopień wzmacniacza na tranzystorze NPN. Zastosuj rezystor kolektorowy między plusem a kolektorem, rezystor emiterowy między emiterem a minusem oraz dzielnik polaryzujący bazę z dwóch rezystorów. Kondensator sprzęgający umieść na wejściu sygnału, a drugi między kolektorem a wyjściem do głośnika. Brzęczyk służy tu tylko jako symbol obciążenia — symulator nie modeluje jeszcze wzmocnienia ani sygnału audio.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · 4 rezystory · 2 kondensatory · brzęczyk',kit:[19,5,5,5,5,17,17,9]}
+ {title:'LED z rezystorem',goal:'Ustaw zasilanie planszy na 5 V. Zbuduj bezpieczny obwód szeregowy: plus → rezystor → czerwona LED → minus. Ustaw anodę LED od strony plusa. Sprawdź, jak zmienia się prąd po zmianie rezystora.',parts:'Zasilanie planszy: 5 V · rezystor · czerwona LED',kit:[5,1],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','bn']]},
+ {title:'Dzielnik napięcia',goal:'Ustaw zasilanie na 5 V. Połącz dwa rezystory szeregowo między biegunami baterii. Podłącz woltomierz równolegle do jednego rezystora i porównaj odczyt z napięciem zasilania.',parts:'Zasilanie planszy: 5 V · 2 rezystory · woltomierz',kit:[5,5,25],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','bn'],['0a','2a'],['0b','2b']]},
+ {title:'Ładowanie kondensatora',goal:'Ustaw zasilanie na 5 V. Połącz szeregowo źródło z planszy, rezystor i kondensator. Podłącz oscyloskop równolegle do kondensatora. Obserwuj narastanie napięcia i zmień pojemność kondensatora.',parts:'Zasilanie planszy: 5 V · rezystor · kondensator · oscyloskop',kit:[5,17,43],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','bn'],['1a','2a'],['1b','2b']]},
+ {title:'Tranzystor jako przełącznik',goal:'Ustaw zasilanie na 5 V. Zbuduj sterowanie żarówką tranzystorem NPN: emiter do minusa, żarówka między plusem a kolektorem, a baza przez rezystor i przełącznik do plusa.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · rezystor · przełącznik · żarówka',kit:[19,5,11,0],voltage:5,wires:[['bp','3a'],['3b','0c'],['0e','bn'],['bp','2a'],['2b','1a'],['1b','0b']]},
+ {title:'Czujnik światła',goal:'Ustaw zasilanie na 5 V. Połącz szeregowo źródło z planszy, fotorezystor, rezystor i czerwoną LED. Zmieniaj suwak światła i obserwuj wpływ jasności na prąd oraz świecenie LED.',parts:'Zasilanie planszy: 5 V · fotorezystor · rezystor · czerwona LED',kit:[7,5,1],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','2a'],['2b','bn']]},
+ {title:'DIAC i próg napięcia',goal:'Ustaw zasilanie na 9 V. Połącz źródło z planszy, rezystor, DIAC i żarówkę szeregowo. Zmieniaj napięcie baterii oraz próg DIAC i sprawdź, kiedy element zacznie przewodzić.',parts:'Zasilanie planszy: 9 V · rezystor · DIAC · żarówka',kit:[5,42,0],voltage:9,wires:[['bp','0a'],['0b','1a'],['1b','2a'],['2b','bn']]},
+ {title:'Dwie żarówki równolegle',goal:'Ustaw zasilanie na 5 V i podłącz każdą żarówkę osobną gałęzią między plusem a minusem. Porównaj jasność z połączeniem szeregowym.',parts:'Zasilanie planszy: 5 V · 2 żarówki',kit:[0,0],voltage:5,wires:[['bp','0a'],['0b','bn'],['bp','1a'],['1b','bn']]},
+ {title:'Dwie gałęzie LED',goal:'Ustaw zasilanie na 5 V. Zbuduj dwie gałęzie równoległe, każdą z własnym rezystorem i LED połączonymi szeregowo. Zwróć uwagę, że każda LED ma własne ograniczenie prądu.',parts:'Zasilanie planszy: 5 V · 2 rezystory · czerwona i zielona LED',kit:[5,1,5,2],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','bn'],['bp','2a'],['2b','3a'],['3b','bn']]},
+ {title:'Dioda przewodzi w jedną stronę',goal:'Ustaw zasilanie na 3 V. Połącz szeregowo źródło, diodę i żarówkę. Zmień kierunek podłączenia diody i sprawdź, kiedy obwód przewodzi.',parts:'Zasilanie planszy: 3 V · dioda · żarówka',kit:[14,0],voltage:3,wires:[['bp','0a'],['0b','1a'],['1b','bn']]},
+ {title:'Bezpiecznik w obwodzie',goal:'Ustaw zasilanie na 5 V i włącz bezpiecznik szeregowo z rezystorem oraz żarówką. Obserwuj, jak zmiana rezystancji wpływa na prąd płynący przez bezpiecznik.',parts:'Zasilanie planszy: 5 V · bezpiecznik · rezystor · żarówka',kit:[13,5,0],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','2a'],['2b','bn']]},
+ {title:'Potencjometr jako dzielnik',goal:'Ustaw zasilanie na 9 V. Połącz końce potencjometru z plusem i minusem, a woltomierz między suwak W i minus. Klikaj potencjometr, aby zmieniać napięcie wyjściowe.',parts:'Zasilanie planszy: 9 V · potencjometr · woltomierz',kit:[6,25],voltage:9,wires:[['bp','0a'],['0b','bn'],['0w','1a'],['bn','1b']]},
+ {title:'Termistor NTC',goal:'Ustaw zasilanie na 5 V. Połącz termistor NTC szeregowo z rezystorem i żarówką. Zmieniaj temperaturę suwakiem i obserwuj zmianę rezystancji oraz prądu.',parts:'Zasilanie planszy: 5 V · termistor NTC · rezystor · żarówka',kit:[37,5,0],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','2a'],['2b','bn']]},
+ {title:'Przekaźnik sterowany przyciskiem',goal:'Ustaw zasilanie na 5 V. Zbuduj obwód sterujący: plus przez przycisk do cewki przekaźnika, a drugi koniec cewki do minusa. W osobnym obwodzie połącz styki przekaźnika z żarówką i obserwuj działanie podczas przytrzymania przycisku.',parts:'Zasilanie planszy: 5 V · przekaźnik · przycisk · żarówka',kit:[23,12,0],voltage:5,wires:[['bp','1a'],['1b','0a'],['0b','bn'],['bp','0c'],['0d','2a'],['2b','bn']]},
+ {title:'Fotodioda reaguje na światło',goal:'Ustaw zasilanie na 5 V. Połącz fotodiodę, rezystor i amperomierz w obwód szeregowy. Zmieniaj jasność suwakiem i obserwuj, jak zmienia się prąd. Jeśli odczyt jest bliski zeru, odwróć fotodiodę.',parts:'Zasilanie planszy: 5 V · fotodioda · rezystor · amperomierz',kit:[41,5,24],voltage:5,wires:[['bp','0a'],['0b','1a'],['1b','2a'],['2b','bn']]},
+ {title:'Generator prostokątny — multiwibrator astabilny',goal:'Zbuduj klasyczny multiwibrator astabilny na dwóch tranzystorach NPN. Połącz emitery z minusem, w każdym kolektorze umieść rezystor do plusa, a każdą bazę podciągnij rezystorem do plusa. Dodaj kondensatory krzyżowo: kolektor pierwszego tranzystora przez kondensator do bazy drugiego i odwrotnie. Zmieniaj pojemność kondensatorów i przewidź, jak wpłynie na częstotliwość. To ćwiczenie montażowe — symulator nie odwzorowuje jeszcze samowzbudnych oscylacji.',parts:'Zasilanie planszy: 5 V · 2 tranzystory NPN · 4 rezystory · 2 kondensatory',kit:[19,19,5,5,5,5,17,17],voltage:5,structuralOnly:true,wires:[['0e','bn'],['1e','bn'],['bp','2a'],['2b','0c'],['bp','3a'],['3b','1c'],['bp','4a'],['4b','0b'],['bp','5a'],['5b','1b'],['0c','6a'],['6b','1b'],['1c','7a'],['7b','0b']]},
+ {title:'Wzmacniacz audio — wspólny emiter',goal:'Zbuduj koncepcyjny stopień wzmacniacza na tranzystorze NPN. Zastosuj rezystor kolektorowy między plusem a kolektorem, rezystor emiterowy między emiterem a minusem oraz dzielnik polaryzujący bazę z dwóch rezystorów. Kondensator sprzęgający umieść na wejściu sygnału, a drugi między kolektorem a wyjściem do głośnika. Brzęczyk służy tu tylko jako symbol obciążenia — symulator nie modeluje jeszcze wzmocnienia ani sygnału audio.',parts:'Zasilanie planszy: 5 V · tranzystor NPN · 4 rezystory · 2 kondensatory · brzęczyk',kit:[19,5,5,5,5,17,17,9],voltage:5,structuralOnly:true,wires:[['bp','1a'],['1b','0c'],['0e','2a'],['2b','bn'],['bp','3a'],['3b','0b'],['0b','4a'],['4b','bn'],['0b','5b'],['0c','6a'],['6b','7a'],['7b','bn']]}
 ];
-const taskCards=SB_TASKS.map((task,i)=>`<article class="sb-task"><h3>${i+1}. ${task.title}</h3><p>${task.goal}</p><p class="sb-materials">Elementy: ${task.parts}</p><button data-sbkit="${task.kit.join(',')}">Dodaj elementy do planszy</button></article>`).join('');
+const taskCards=SB_TASKS.map((task,i)=>`<article class="sb-task"><h3>${i+1}. ${task.title}</h3><p>${task.goal}</p><p class="sb-materials">Elementy: ${task.parts}</p><button data-sbkit="${i}">Dodaj elementy do planszy</button><button data-sbcheck="${i}">Sprawdź układ</button></article>`).join('');
 $('cpal').innerHTML=`<nav class="sb-tabs" aria-label="Zawartość piaskownicy"><button type="button" data-sbtab="elements" aria-selected="true">Elementy</button><button type="button" data-sbtab="tasks" aria-selected="false">Zadania (${SB_TASKS.length})</button></nav><div id="sb-elements" class="sb-panel">${GR.map(([n,ix])=>`<div class="pg"><span class="pgl">${n}</span><div class="pgb">${ix.map(i=>`<button data-add="${i}">${PAL[i][0]}</button>`).join('')}</div></div>`).join('')}<div class="pg act"><span class="pgl">Plik i gra</span><div class="pgb"><button data-shshare="1" class="p">Udostępnij układ</button><button data-shopen="1">Wczytaj układ</button><button data-mpopen="1">Gra wspólna</button><button data-sbclear="1">Wyczyść planszę</button></div></div></div><div id="sb-tasks" class="sb-panel" hidden>${taskCards}</div>`;
 function setSandboxTab(tab){
  const tasks=tab==='tasks';
@@ -456,7 +456,37 @@ function sbAdd(i){
  [95,185,275].forEach(y=>[250,370,490,610].forEach(x=>slots.push({x,y})));[140,230].forEach(y=>[310,430,550].forEach(x=>slots.push({x,y})));
  const pos=slots.find(q=>!comps.some(c=>{const p=cpos[SB][c.id];return Math.abs(p.x-q.x)<100&&Math.abs(p.y-q.y)<65}));
  if(!pos){$('cmsg').textContent='Brak miejsca na planszy. Zaznacz element i usuń go albo przesuń istniejące elementy bliżej siebie.';return false}
- comps.push({id,...def,x:pos.x,y:pos.y});cpos[SB][id]={...pos};crot[SB][id]=0;$('cmsg').textContent='';circuitPaint();return true}
+ comps.push({id,...def,x:pos.x,y:pos.y});cpos[SB][id]={...pos};crot[SB][id]=0;$('cmsg').textContent='';circuitPaint();return id}
+function checkSandboxTask(index){
+ const task=SB_TASKS[index],session=activeSandboxTask;
+ if(ci!==SB){$('cmsg').textContent='Przejdź do planszy piaskownicy, aby sprawdzić zadanie.';return}
+ if(!task||!session||session.index!==index){$('cmsg').textContent='Najpierw kliknij „Dodaj elementy do planszy” przy tym zadaniu.';return}
+ const missingParts=task.kit.some((paletteIndex,i)=>{
+  const component=C[SB].components.find(c=>c.id===session.ids[i]);
+  return !component||component.type!==PAL[paletteIndex][1].type
+ });
+ if(missingParts){$('cmsg').textContent='Brakuje elementu z zestawu zadania. Dodaj zestaw ponownie albo przywróć usunięty element.';return}
+ if(Math.abs(cvolt[SB]-task.voltage)>.01){$('cmsg').textContent=`Ustaw napięcie zasilania na ${task.voltage} V.`;return}
+ const endpoint=token=>{
+  if(token==='bp'||token==='bn')return token;
+  const match=/^(\d+)([a-z])$/.exec(token);
+  if(!match)throw new Error(`Nieprawidłowy zacisk zadania: ${token}`);
+  return session.ids[Number(match[1])]+match[2];
+ };
+ const signature=(a,b)=>[a,b].sort().join('|');
+ const expected=new Set(task.wires.map(([a,b])=>signature(endpoint(a),endpoint(b))));
+ const taskTerminals=new Set(session.ids.flatMap(id=>['a','b','c','e','g','d','s','w'].map(port=>id+port)));
+ const actual=new Set(cw.filter(w=>taskTerminals.has(w.from)||taskTerminals.has(w.to)||signature(w.from,w.to)===signature('bp','bn')).map(w=>signature(w.from,w.to)));
+ const missing=[...expected].filter(w=>!actual.has(w));
+ const extra=[...actual].filter(w=>!expected.has(w));
+ if(missing.length||extra.length){
+  $('cmsg').textContent=missing.length?`Brakuje ${missing.length} połączeń; sprawdź zaciski i ich kolejność. Usuń błędne przewody i porównaj układ z opisem.`:`Układ ma ${extra.length} dodatkowych połączeń. Usuń przewody, które nie należą do schematu zadania.`;
+  return;
+ }
+ $('cmsg').textContent=task.structuralOnly
+  ?'Połączenia są poprawne. To zadanie sprawdza montaż — symulator nie modeluje jeszcze generowania ani wzmacniania sygnału.'
+  :'Połączenia są zgodne z zadaniem. Sprawdź odczyty przyrządów i działanie elementów na planszy.';
+}
 function sbDel(id){
  const ts=new Set(circuitNodes().filter(n=>n.component===id).map(n=>n.id));
  cw=cw.filter(w=>!ts.has(w.from)&&!ts.has(w.to));
@@ -813,12 +843,17 @@ document.addEventListener('click',e=>{
  const component=e.target.closest('[data-drag]');
  if(component){selectSandboxComponent(component);if(C[ci].components.find(c=>c.id===component.dataset.drag)?.type==='oscilloscope')openScope(component.dataset.drag)}
  else if(ci===SB&&e.target.closest('[data-canvas]')&&!wireDraft)clearSandboxSelection();
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbtab],[data-sbkit],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-selected-rotate],[data-selected-delete],[data-add],[data-sbtab],[data-sbkit],[data-sbcheck],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],[data-canvas],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  if(t.dataset.sbtab){setSandboxTab(t.dataset.sbtab);return}
+ if(t.dataset.sbcheck!==undefined){checkSandboxTask(Number(t.dataset.sbcheck));return}
  if(t.dataset.sbkit!==undefined){
-  let added=0;for(const index of t.dataset.sbkit.split(',').map(Number)){if(!sbAdd(index))break;added++}
-  $('cmsg').textContent=added===t.dataset.sbkit.split(',').length?'Elementy dodane. Zbuduj obwód zgodnie z opisem zadania.':`Dodano ${added} z ${t.dataset.sbkit.split(',').length} elementów — na planszy zabrakło miejsca.`;
+  const index=Number(t.dataset.sbkit),task=SB_TASKS[index];
+  if(!task){$('cmsg').textContent='Nie znaleziono zadania.';return}
+  const ids=[];
+  for(const paletteIndex of task.kit){const id=sbAdd(paletteIndex);if(!id)break;ids.push(id)}
+  if(ids.length===task.kit.length){activeSandboxTask={index,ids};$('cmsg').textContent='Elementy dodane. Zbuduj obwód zgodnie z opisem, a potem kliknij „Sprawdź układ”.'}
+  else{$('cmsg').textContent=`Dodano ${ids.length} z ${task.kit.length} elementów — na planszy zabrakło miejsca.`}
   return;
  }
  if(t.dataset.clevel!==undefined){ci=+t.dataset.clevel;cw=[];wireDraft=null;cclosed=false;clearSandboxSelection();$('cmsg').textContent='';circuitPaint();return}
@@ -886,7 +921,7 @@ document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'&&e.key!==' ')return;
  const scope=e.target.closest('[data-drag]');
  if(scope&&C[ci].components.find(c=>c.id===scope.dataset.drag)?.type==='oscilloscope'){e.preventDefault();openScope(scope.dataset.drag);return}
- const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbtab],[data-sbkit],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
+ const t=e.target.closest('[data-terminal],[data-wire],[data-switch],[data-tog],[data-pot],[data-res],[data-cycle],[data-fix],[data-rotate],[data-del],[data-add],[data-sbtab],[data-sbkit],[data-sbcheck],[data-sbclear],[data-shshare],[data-shopen],[data-shcopy],[data-shload],[data-shundo],[data-mpopen],[data-mphost],[data-mpjoin],[data-mpleave],[data-mpcopy],[data-zin],[data-zout],[data-zfit],[data-clevel],#ccheck,#ccancel,#cclear,#cnext,#chint,#cundo,#cdis,#crandom');
  if(!t)return;
  e.preventDefault();t.click();
 });
